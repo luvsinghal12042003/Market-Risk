@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Market Risk Analytics — FRA Group Project</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<style>
+:root{
+  --navy:#0f2d5e;--navy2:#1a3f7a;--teal:#0d6e6e;--teal2:#0a9396;
+  --navy-l:rgba(15,45,94,.12);--teal-l:rgba(13,110,110,.12);
+  --red:#c0392b;--green:#1a6b3c;--amber:#b45309;
+  --bg:#f0f4f8;--card:#ffffff;--text:#111827;--muted:#6b7280;--border:#dee2e6;
+  --serif:'DM Serif Display',Georgia,serif;--sans:'Inter',-apple-system,sans-serif;
+  --shadow:0 2px 12px rgba(0,0,0,.08);--shadow-lg:0 8px 32px rgba(0,0,0,.12);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.6;font-size:14px}
+h1,h2,h3{font-family:var(--serif)}
+
+/* ── MASTHEAD ── */
+.masthead{background:var(--navy);color:#fff;padding:.5rem 5%;font-size:.78rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.4rem;letter-spacing:.02em}
+.masthead span{opacity:.85}
+
+/* ── HEADER ── */
+header{background:var(--card);border-bottom:3px solid var(--navy);padding:1.25rem 5%;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;box-shadow:var(--shadow)}
+.htitle h1{font-size:1.9rem;color:var(--navy);letter-spacing:-.01em}
+.htitle p{color:var(--muted);font-size:.85rem;margin-top:.15rem}
+.cap-group{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.75rem 1.25rem}
+.cap-group label{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;display:block;margin-bottom:.3rem}
+.cap-wrap{display:flex;align-items:center;gap:.3rem;font-size:1.25rem;font-family:var(--serif);font-weight:600}
+.cap-wrap input{font:inherit;border:none;background:transparent;border-bottom:2px solid var(--navy);outline:none;width:150px;color:var(--navy);transition:.2s;text-align:right}
+.cap-wrap input:focus{border-color:var(--teal)}
+
+/* ── NAV TABS ── */
+.tabs{background:var(--card);border-bottom:1px solid var(--border);padding:0 5%;display:flex;overflow-x:auto;gap:0;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.tabs button{background:none;border:none;padding:.9rem 1.1rem;font:.6rem/1 var(--sans);font-size:.82rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:.2s;white-space:nowrap;letter-spacing:.02em;text-transform:uppercase}
+.tabs button:hover{color:var(--text);background:rgba(0,0,0,.02)}
+.tabs button.on{color:var(--navy);border-bottom-color:var(--navy)}
+
+/* ── MAIN ── */
+main{padding:1.75rem 5% 3rem;max-width:1400px;margin:0 auto}
+.sec{display:none;animation:fi .3s ease}
+.sec.on{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── GRIDS ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:.9rem}
+.mb{margin-bottom:1.25rem}
+@media(max-width:900px){.g2,.g3,.g4,.g5{grid-template-columns:1fr}}
+
+/* ── CARD ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem;box-shadow:var(--shadow)}
+.card-h{margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+.card-t{font-size:1.05rem;font-weight:600;font-family:var(--serif)}
+.card-a{border-top:4px solid var(--navy)}
+.card-b{border-top:4px solid var(--teal)}
+.card-ab{border-top:4px solid var(--amber)}
+
+/* ── KPI / METRIC ── */
+.kpi{display:flex;flex-direction:column;gap:.2rem}
+.kpi-l{font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.kpi-v{font-size:1.6rem;font-family:var(--serif);font-weight:400;line-height:1.2}
+.kpi-s{font-size:.78rem;color:var(--muted);margin-top:.1rem}
+.kpi-s b{font-weight:600}
+.kpi-badge{display:inline-block;padding:.15rem .55rem;border-radius:20px;font-size:.68rem;font-weight:700;letter-spacing:.03em}
+.badge-up{background:#dcfce7;color:#16a34a}
+.badge-dn{background:#fee2e2;color:#dc2626}
+.badge-neu{background:#f1f5f9;color:#475569}
+.clr-a{color:var(--navy)}.clr-b{color:var(--teal)}.clr-r{color:var(--red)}.clr-g{color:var(--green)}.clr-m{color:var(--muted)}
+
+/* ── CHART WRAPPERS ── */
+.ch{position:relative;height:300px;width:100%}
+.ch-l{height:400px}
+.ch-xl{height:480px}
+.ch-s{height:220px}
+.ch-h{height:340px}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+th,td{padding:.55rem .7rem;text-align:right;border-bottom:1px solid var(--border)}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:600;color:var(--muted);text-transform:uppercase;font-size:.66rem;letter-spacing:.06em;background:#f8fafc;white-space:nowrap}
+tr:hover td{background:#fafbfc}
+td.num{font-variant-numeric:tabular-nums}
+
+/* ── CALLOUT ── */
+.callout{padding:.9rem 1.1rem;border-radius:8px;margin-bottom:1.1rem;font-size:.87rem;line-height:1.7}
+.info{background:#eff6ff;border-left:4px solid var(--navy)}
+.good{background:#f0fdf4;border-left:4px solid var(--green)}
+.warn{background:#fff7ed;border-left:4px solid var(--amber)}
+.danger{background:#fef2f2;border-left:4px solid var(--red)}
+.callout strong{font-weight:700}
+
+/* ── STEP ── */
+.step{display:flex;gap:.9rem;margin-bottom:1.25rem;align-items:flex-start}
+.step-num{background:var(--navy);color:#fff;min-width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 .82rem var(--sans)}
+.step-body h4{font-size:.95rem;margin-bottom:.25rem;font-family:var(--serif)}
+.step-body p{color:var(--muted);font-size:.85rem}
+
+/* ── PILL / TAG ── */
+.pill{display:inline-block;padding:.2rem .65rem;border-radius:20px;font-size:.7rem;font-weight:600;letter-spacing:.02em}
+.pill-a{background:var(--navy-l);color:var(--navy)}
+.pill-b{background:var(--teal-l);color:var(--teal)}
+.pill-r{background:#fee2e2;color:var(--red)}
+.pill-g{background:#dcfce7;color:var(--green)}
+
+/* ── LEGEND DOT ── */
+.ldot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:.35rem;flex-shrink:0}
+
+/* ── TOGGLE ── */
+.tgl{display:flex;gap:0;margin-bottom:.9rem}
+.tgl button{padding:.4rem 1rem;font:.82rem var(--sans);font-weight:500;border:1px solid var(--border);background:var(--card);cursor:pointer;transition:.2s}
+.tgl button:first-child{border-radius:6px 0 0 6px}
+.tgl button:last-child{border-radius:0 6px 6px 0}
+.tgl button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* ── HEATMAP ── */
+.heatmap-grid{display:grid;gap:2px}
+.hm-cell{display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:600;border-radius:2px;aspect-ratio:1;cursor:pointer;transition:.15s}
+.hm-cell:hover{opacity:.8}
+.hm-label{font-size:.68rem;color:var(--muted);text-align:right;padding-right:4px;display:flex;align-items:center;justify-content:flex-end}
+.hm-hlabel{font-size:.68rem;color:var(--muted);text-align:center;padding-bottom:3px}
+
+/* ── SECTION TITLE ── */
+.sec-title{font-size:1.4rem;margin-bottom:1.25rem;color:var(--navy);font-family:var(--serif)}
+.sec-sub{font-size:.85rem;color:var(--muted);margin-top:-.9rem;margin-bottom:1.25rem}
+
+/* ── DATA FLAG ── */
+.flag{font-size:.72rem;color:var(--amber);font-style:italic}
+
+/* ── FOOTER ── */
+footer{text-align:center;padding:1.5rem 5%;color:var(--muted);font-size:.78rem;border-top:1px solid var(--border);margin-top:2rem}
+
+/* ── TOOLTIP OVERRIDES ── */
+.chartjs-tooltip{pointer-events:none}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:#f1f5f9}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+
+/* ══════════════ HERO PAGE ══════════════ */
+#hero{
+  position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;
+  background:linear-gradient(135deg,#050d1a 0%,#0f2d5e 40%,#0d4a4a 80%,#041a1a 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  overflow:hidden;transition:opacity .8s ease,transform .8s ease;
+}
+#hero.exit{opacity:0;transform:scale(1.04);pointer-events:none}
+#hero.hidden{display:none}
+
+/* animated background particles */
+.hero-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.hero-bg span{
+  position:absolute;border-radius:50%;opacity:.12;
+  animation:float 8s ease-in-out infinite;
+}
+@keyframes float{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-30px) rotate(180deg)}}
+
+/* grid overlay */
+.hero-grid{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+  background-size:60px 60px;
+}
+
+/* content */
+.hero-content{position:relative;z-index:2;text-align:center;max-width:860px;padding:2rem}
+.hero-badge{
+  display:inline-block;padding:.45rem 1.25rem;
+  border:1px solid rgba(255,255,255,.25);border-radius:30px;
+  font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.7);
+  margin-bottom:2rem;backdrop-filter:blur(4px);background:rgba(255,255,255,.06);
+}
+.hero-title{
+  font-family:'DM Serif Display',Georgia,serif;
+  font-size:clamp(2.4rem,6vw,4.2rem);color:#fff;line-height:1.1;
+  margin-bottom:1rem;letter-spacing:-.02em;
+}
+.hero-title .accent{color:#5ce8d8}
+.hero-sub{
+  font-size:clamp(.9rem,2vw,1.1rem);color:rgba(255,255,255,.6);
+  max-width:580px;margin:0 auto 2.5rem;line-height:1.7;
+}
+
+/* stat strip */
+.hero-stats{
+  display:flex;gap:0;margin:0 auto 3rem;
+  border:1px solid rgba(255,255,255,.12);border-radius:12px;
+  backdrop-filter:blur(8px);background:rgba(255,255,255,.05);
+  overflow:hidden;max-width:640px;
+}
+.hero-stat{
+  flex:1;padding:1.1rem 1rem;text-align:center;
+  border-right:1px solid rgba(255,255,255,.1);
+}
+.hero-stat:last-child{border-right:none}
+.hero-stat-v{
+  font-family:'DM Serif Display',Georgia,serif;
+  font-size:1.6rem;color:#5ce8d8;margin-bottom:.2rem;
+}
+.hero-stat-l{font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.45)}
+
+/* CTA button */
+.hero-cta{
+  position:relative;display:inline-flex;align-items:center;gap:.75rem;
+  background:linear-gradient(135deg,#0d6e6e,#1a9090);
+  color:#fff;font:600 1rem 'Inter',-apple-system,sans-serif;
+  padding:1rem 2.5rem;border-radius:50px;border:none;cursor:pointer;
+  box-shadow:0 0 40px rgba(13,110,110,.5),0 8px 32px rgba(0,0,0,.4);
+  transition:transform .25s ease,box-shadow .25s ease;
+  letter-spacing:.02em;
+}
+.hero-cta:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 0 60px rgba(13,110,110,.7),0 12px 40px rgba(0,0,0,.5)}
+.hero-cta:active{transform:translateY(0)}
+.hero-cta svg{width:22px;height:22px;transition:transform .25s ease}
+.hero-cta:hover svg{transform:translateX(4px)}
+
+/* pulse ring */
+.hero-cta::before{
+  content:'';position:absolute;inset:-4px;border-radius:50px;
+  border:2px solid rgba(92,232,216,.4);
+  animation:pulse-ring 2s ease-out infinite;
+}
+@keyframes pulse-ring{0%{opacity:.8;transform:scale(1)}100%{opacity:0;transform:scale(1.15)}}
+
+/* scroll hint */
+.hero-scroll{
+  position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);
+  color:rgba(255,255,255,.3);font-size:.72rem;letter-spacing:.1em;
+  text-transform:uppercase;display:flex;flex-direction:column;align-items:center;gap:.5rem;
+}
+.hero-scroll::after{
+  content:'';display:block;width:1px;height:40px;
+  background:linear-gradient(to bottom,rgba(255,255,255,.3),transparent);
+  animation:scroll-line 1.8s ease-in-out infinite;
+}
+@keyframes scroll-line{0%,100%{opacity:.3;transform:scaleY(1)}50%{opacity:.8;transform:scaleY(.6)}}
+
+/* main shell hidden until hero exits */
+#shell{opacity:0;transition:opacity .6s ease .2s}
+#shell.visible{opacity:1}
+
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════ HERO PAGE ══════════════════════ -->
+<div id="hero">
+  <div class="hero-bg">
+    <span style="width:420px;height:420px;background:radial-gradient(circle,#0d6e6e,transparent);top:-120px;left:-100px;animation-delay:0s"></span>
+    <span style="width:300px;height:300px;background:radial-gradient(circle,#0f2d5e,transparent);bottom:-80px;right:-80px;animation-delay:-3s"></span>
+    <span style="width:200px;height:200px;background:radial-gradient(circle,#5ce8d8,transparent);top:40%;right:10%;animation-delay:-5s"></span>
+  </div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-badge">PGDM 2025–27 &nbsp;·&nbsp; Term 5 &nbsp;·&nbsp; Financial Risk Analytics &nbsp;·&nbsp; Great Lakes</div>
+    <h1 class="hero-title">
+      Market Risk<br>
+      <span class="accent">Analytics</span> Dashboard
+    </h1>
+    <p class="hero-sub">
+      Portfolio construction, stress testing & Markowitz optimization across 15+ years of NSE data —
+      analysed through two contrasting portfolios.
+    </p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-v">15+</div>
+        <div class="hero-stat-l">Years of Data</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-v">20</div>
+        <div class="hero-stat-l">NSE Stocks</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-v">3</div>
+        <div class="hero-stat-l">Market Regimes</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-v">8</div>
+        <div class="hero-stat-l">Risk Metrics</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-v">₹15L</div>
+        <div class="hero-stat-l">Base Capital</div>
+      </div>
+    </div>
+    <button class="hero-cta" onclick="beginJourney()">
+      Begin the Analysis
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14M12 5l7 7-7 7"/>
+      </svg>
+    </button>
+  </div>
+  <div class="hero-scroll">Scroll to explore</div>
+</div>
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div id="shell" style="opacity:0;transition:opacity 0.6s ease 0.15s">
+
+
+<div class="masthead">
+  <span>PGDM 2025–27 · Term 5 · Financial Risk Analytics · Great Lakes Institute of Management</span>
+  <span>Prof. Priyadarshi Dutta · Group Project 1</span>
+</div>
+
+<header>
+  <div class="htitle">
+    <h1>Market Risk Analytics</h1>
+    <p>Portfolio Construction · Stress Testing · Efficient Frontier Optimization &nbsp;|&nbsp; Data: NSE / NIFTY 50 · Jan 2010 – Sep 2026</p>
+  </div>
+  <div class="cap-group">
+    <label>Base Capital (₹)</label>
+    <div class="cap-wrap">₹<input id="cap" value="15,00,000" onchange="capChange(this.value)"></div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="on" onclick="go('ov',this)">📊 Overview</button>
+  <button onclick="go('meth',this)">🔬 Methodology</button>
+  <button onclick="go('pa',this)">Portfolio A</button>
+  <button onclick="go('pb',this)">Portfolio B</button>
+  <button onclick="go('stress',this)">⚡ Stress Tests</button>
+  <button onclick="go('mkw',this)">📈 Efficient Frontier</button>
+  <button onclick="go('corr',this)">🔗 Correlation</button>
+  <button onclick="go('fin',this)">💡 Findings</button>
+</nav>
+
+<main>
+
+<!-- ════════════ OVERVIEW ════════════ -->
+<section id="ov" class="sec on">
+<h2 class="sec-title">Portfolio Snapshot</h2>
+<p class="sec-sub">Full period analysis: Nov 2010 – Sep 2026 · ₹15,00,000 base capital · 252 trading days/year</p>
+
+<!-- KPI Row A -->
+<div class="g5 mb">
+  <div class="card card-a">
+    <div class="kpi-l" style="color:var(--navy)">Portfolio A · Ann. Return</div>
+    <div class="kpi-v clr-a">16.72%</div>
+    <div class="kpi-s">Actual: <b id="ov-ar">₹1,47,009 / yr</b></div>
+  </div>
+  <div class="card card-a">
+    <div class="kpi-l" style="color:var(--navy)">Portfolio A · Ann. Volatility</div>
+    <div class="kpi-v clr-r">20.82%</div>
+    <div class="kpi-s">Daily σ = 1.18% <span class="pill pill-r">High Risk</span></div>
+  </div>
+  <div class="card card-a">
+    <div class="kpi-l" style="color:var(--navy)">Portfolio A · Sharpe Ratio</div>
+    <div class="kpi-v clr-a">0.491</div>
+    <div class="kpi-s">Rf = 6% p.a. annualised</div>
+  </div>
+  <div class="card card-a">
+    <div class="kpi-l" style="color:var(--navy)">Portfolio A · Daily VaR 95%</div>
+    <div class="kpi-v clr-r">−1.47%</div>
+    <div class="kpi-s clr-r" id="ov-av">−₹22,055</div>
+  </div>
+  <div class="card card-a">
+    <div class="kpi-l" style="color:var(--navy)">Portfolio A · Max Drawdown</div>
+    <div class="kpi-v clr-r">−22.23%</div>
+    <div class="kpi-s clr-r" id="ov-add">−₹3,91,800</div>
+  </div>
+</div>
+
+<!-- KPI Row B -->
+<div class="g5 mb">
+  <div class="card card-b">
+    <div class="kpi-l" style="color:var(--teal)">Portfolio B · Ann. Return</div>
+    <div class="kpi-v clr-b">16.34%</div>
+    <div class="kpi-s">Actual: <b id="ov-br">₹1,51,885 / yr</b></div>
+  </div>
+  <div class="card card-b">
+    <div class="kpi-l" style="color:var(--teal)">Portfolio B · Ann. Volatility</div>
+    <div class="kpi-v clr-g">13.54%</div>
+    <div class="kpi-s">Daily σ = 0.88% <span class="pill pill-g">Low Risk</span></div>
+  </div>
+  <div class="card card-b">
+    <div class="kpi-l" style="color:var(--teal)">Portfolio B · Sharpe Ratio</div>
+    <div class="kpi-v clr-b">0.727</div>
+    <div class="kpi-s">+109% vs Portfolio A</div>
+  </div>
+  <div class="card card-b">
+    <div class="kpi-l" style="color:var(--teal)">Portfolio B · Daily VaR 95%</div>
+    <div class="kpi-v clr-g">−1.22%</div>
+    <div class="kpi-s clr-r" id="ov-bv">−₹24,150</div>
+  </div>
+  <div class="card card-b">
+    <div class="kpi-l" style="color:var(--teal)">Portfolio B · Max Drawdown</div>
+    <div class="kpi-v clr-g">−17.65%</div>
+    <div class="kpi-s clr-r" id="ov-bdd">−₹3,66,975</div>
+  </div>
+</div>
+
+<div class="callout info mb">
+  <strong>Key Takeaway:</strong> Portfolio A delivers <em>higher absolute returns</em> (34.60% vs 21.46%) with <em>also lower risk</em> (14.09% vs 12.97%) — a <strong>Sharpe of 0.491</strong>, nearly 2× Portfolio B's (1.037). Port A uses CAGR-rank weighting (BEL 30%, ADANIENT 9.69%).
+  On the worst 5% of days, Portfolio A loses <strong id="ov-avt">₹22,050</strong> vs Portfolio B's <strong id="ov-bvt">₹18,315</strong> — a saving of <strong id="ov-diff">₹3,735</strong> per bad day.
+</div>
+
+<div class="g2 mb">
+  <div class="card">
+    <div class="card-h"><h3 class="card-t">Cumulative Growth (Full Period · Nov 2010–Sep 2026)</h3></div>
+    <div class="ch-l"><canvas id="c-cum"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-h"><h3 class="card-t">Drawdown Profile (Full Period)</h3></div>
+    <div class="ch-l"><canvas id="c-dd"></canvas></div>
+  </div>
+</div>
+
+<div class="card mb">
+  <div class="card-h"><h3 class="card-t">Master Comparison: All Periods × Both Portfolios</h3></div>
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th colspan="2" style="text-align:center;background:#e8eef7">Full Period (2010–2026)</th>
+          <th colspan="2" style="text-align:center;background:#e7f5f0">Calm Period (2015–2018)</th>
+          <th colspan="2" style="text-align:center;background:#fff3e0">Crisis Period (2020–2021)</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th class="clr-a">Port A</th><th class="clr-b">Port B</th>
+          <th class="clr-a">Port A</th><th class="clr-b">Port B</th>
+          <th class="clr-a">Port A</th><th class="clr-b">Port B</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Ann. Return</td><td class="clr-a">16.72%</td><td class="clr-b">16.34%</td><td class="clr-g">8.80%</td><td>3.72%</td><td class="clr-g">51.82%</td><td class="clr-g">33.91%</td></tr>
+        <tr><td>Ann. Volatility</td><td class="clr-r">20.82%</td><td class="clr-g">13.54%</td><td class="clr-r">20.38%</td><td class="clr-g">16.90%</td><td class="clr-r">31.48%</td><td class="clr-g">24.36%</td></tr>
+        <tr><td>Sharpe Ratio</td><td>0.491</td><td>0.727</td><td>0.113</td><td>−0.164</td><td>1.440</td><td>1.125</td></tr>
+        <tr><td>Max Drawdown</td><td class="clr-r">−22.23%</td><td class="clr-g">−17.65%</td><td class="clr-r">−32.36%</td><td class="clr-g">−21.55%</td><td class="clr-r">−44.34%</td><td class="clr-g">−31.46%</td></tr>
+        <tr><td>Hist VaR 95%</td><td class="clr-r">−1.47%</td><td class="clr-g">−1.22%</td><td class="clr-r">−1.31%</td><td class="clr-g">−1.46%</td><td class="clr-r">−2.06%</td><td class="clr-g">−1.56%</td></tr>
+        <tr><td>Hist VaR 99%</td><td class="clr-r">−2.39%</td><td class="clr-g">−2.03%</td><td class="clr-r">−2.04%</td><td class="clr-g">−2.32%</td><td class="clr-r">−3.60%</td><td class="clr-g">−3.21%</td></tr>
+        <tr><td>Param VaR 95%</td><td class="clr-r">−1.46%</td><td class="clr-g">−1.27%</td><td class="clr-r">−1.28%</td><td class="clr-g">−1.50%</td><td class="clr-r">−2.03%</td><td class="clr-g">−1.82%</td></tr>
+        <tr style="border-top:2px solid var(--border)"><td>Hist ES 95%</td><td class="clr-r">−2.11%</td><td class="clr-g">−1.75%</td><td class="clr-r">−1.84%</td><td class="clr-g">−2.07%</td><td class="clr-r">−3.16%</td><td class="clr-g">−2.58%</td></tr>
+        <tr><td>Hist ES 99%</td><td class="clr-r">−3.3%</td><td class="clr-g">−2.60%</td><td class="clr-r">−2.73%</td><td class="clr-g">−3.02%</td><td class="clr-r">−4.97%</td><td class="clr-g">−4.70%</td></tr>
+        <tr><td><strong>₹ VaR 95% (on <span class="cap-disp">₹15L</span>)</strong></td>
+          <td class="clr-r"><strong id="t-av">−₹22,055</strong></td><td class="clr-r"><strong id="t-bv">−₹18,315</strong></td>
+          <td class="clr-r"><strong id="t-avc">−₹30,750</strong></td><td class="clr-r"><strong id="t-bvc">−₹26,250</strong></td>
+          <td class="clr-r"><strong id="t-avk">−₹46,200</strong></td><td class="clr-r"><strong id="t-bvk">−₹30,450</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-h"><h3 class="card-t">Return vs Risk across All Regimes</h3></div>
+  <div class="ch"><canvas id="c-regime"></canvas></div>
+</div>
+</section>
+
+<!-- ════════════ METHODOLOGY ════════════ -->
+<section id="meth" class="sec">
+<h2 class="sec-title">Stock Selection Methodology</h2>
+<div class="g2 mb">
+  <div class="card">
+    <div class="card-h"><h3 class="card-t">Selection Framework — 4 Steps</h3></div>
+    <div class="step"><div class="step-num">1</div><div class="step-body"><h4>Universe: NIFTY 50</h4><p>Started with 50 constituent stocks. Removed stocks with insufficient history (< 2010), yielding 47 eligible stocks.</p></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body"><h4>Return Score (Composite, percentile-ranked)</h4><p><code>RetScore = 40% × CAGR + 30% × Excess Return vs NIFTY + 30% × Sharpe Ratio</code><br>Each component ranked 0–100 percentile across all 47 stocks.</p></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body"><h4>Risk Score (Composite, percentile-ranked)</h4><p><code>RiskScore = 25% × Volatility + 20% × Beta + 20% × VaR₉₅ + 25% × ES₉₅ + 10% × MaxDrawdown</code></p></div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body"><h4>4-Quadrant Classification &amp; Selection</h4><p>Median-split → 4 quadrants. Selected 10 stocks each from <span class="pill pill-a">High Risk · High Return</span> (Port A) and <span class="pill pill-b">Low Risk · High Return</span> (Port B). Max 2 stocks per sector for diversification.</p></div></div>
+  </div>
+  <div class="card">
+    <div class="card-h"><h3 class="card-t">Weighting Rationale</h3></div>
+    <div class="mb">
+      <div class="pill pill-a mb" style="margin-bottom:.6rem">Portfolio A — CAGR-Rank Weighting</div>
+      <p style="font-size:.85rem;color:var(--muted);margin-bottom:.7rem">Stocks ranked by CAGR; highest CAGR receives highest weight. Minimum floor of 4% per stock. BEL (CAGR rank #1 at time of construction) received 30%. Reflects a return-maximisation philosophy.</p>
+      <div class="pill pill-b" style="margin-bottom:.6rem">Portfolio B — Risk-Score Weighting</div>
+      <p style="font-size:.85rem;color:var(--muted)">Stocks shortlisted from the Low Risk–High Return quadrant were ranked based on their risk scores, with greater allocation preference given to stocks exhibiting lower risk. The weighting methodology aims to balance return potential with downside risk, avoiding excessive concentration in high-risk stocks.</p>
+    </div>
+    <div class="callout warn" style="margin-top:.5rem">
+      <strong>Assumption:</strong> All weights are applied to the <em>full period</em> data. Weights are frozen at construction — no rebalancing is modelled. This is a back-test, not a live strategy.
+    </div>
+    <div class="card-h" style="margin-top:1rem"><h3 class="card-t">Data Sources & Limitations</h3></div>
+    <ul style="padding-left:1.2rem;font-size:.85rem;color:var(--muted);line-height:2.1">
+      <li>Price data: Yahoo Finance via NSE ticker suffixes (.NS)</li>
+      <li>Risk-free rate: 6% p.a. (approximate Indian repo rate)</li>
+      <li>VaR/ES: Both historical simulation & parametric (normal) methods used</li>
+      <li>GARCH model not applied — vol clustering not captured</li>
+      <li>Monte Carlo VaR not included — normal distribution assumed for parametric</li>
+      <li>Correlation matrix computed on full-period daily returns</li>
+      <li>Covariance stationarity assumed (may not hold across regimes)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card mb">
+  <div class="card-h"><h3 class="card-t">4-Quadrant Stock Universe — Return Score vs Risk Score</h3></div>
+  <div class="ch-l"><canvas id="c-quad"></canvas></div>
+  <p style="text-align:center;color:var(--muted);font-size:.78rem;margin-top:.6rem">Dashed lines = median split. Each dot = one NIFTY stock. <span style="color:var(--navy)">■</span> Port A &nbsp; <span style="color:var(--teal)">■</span> Port B &nbsp; <span style="color:#9ca3af">■</span> Excluded</p>
+</div>
+
+<div class="g2">
+  <div class="card card-a">
+    <div class="card-h"><h3 class="card-t clr-a">Portfolio A — 10 Selected Stocks</h3></div>
+    <div class="tbl-wrap"><table id="tbl-pa-sel">
+      <thead><tr><th>Stock</th><th>Sector</th><th>Weight</th><th>CAGR</th><th>Vol</th><th>Sharpe</th><th>VaR 95%</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </div>
+  <div class="card card-b">
+    <div class="card-h"><h3 class="card-t clr-b">Portfolio B — 10 Selected Stocks</h3></div>
+    <div class="tbl-wrap"><table id="tbl-pb-sel">
+      <thead><tr><th>Stock</th><th>Sector</th><th>Weight</th><th>CAGR</th><th>Vol</th><th>Sharpe</th><th>VaR 95%</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </div>
+</div>
+</section>
+
+<!-- ════════════ PORTFOLIO A ════════════ -->
+<section id="pa" class="sec">
+<h2 class="sec-title">Portfolio A — High Risk · High Return</h2>
+<div class="g4 mb">
+  <div class="card card-a"><div class="kpi-l" style="color:var(--navy)">Strategy</div><div class="kpi-v" style="font-size:1rem;margin-top:.3rem">CAGR-Rank Weighted</div><div class="kpi-s">BEL 30% → EICHERMOT 6% (lowest)</div></div>
+  <div class="card card-a"><div class="kpi-l" style="color:var(--navy)">Ann. Return</div><div class="kpi-v clr-a">16.72%</div><div class="kpi-s" id="pa-ret">₹1,47,009 / yr</div></div>
+  <div class="card card-a"><div class="kpi-l" style="color:var(--navy)">Ann. Volatility</div><div class="kpi-v clr-r">20.82%</div><div class="kpi-s">Daily σ = 1.18%</div></div>
+  <div class="card card-a"><div class="kpi-l" style="color:var(--navy)">Sharpe Ratio</div><div class="kpi-v clr-a">0.491</div><div class="kpi-s">Rf = 6% annual</div></div>
+</div>
+
+<div class="g2 mb">
+  <div class="card"><div class="card-h"><h3 class="card-t clr-a">Weight Allocation</h3></div><div class="ch"><canvas id="c-paw"></canvas></div></div>
+  <div class="card"><div class="card-h"><h3 class="card-t clr-a">Risk vs Return (Per Stock)</h3></div><div class="ch"><canvas id="c-parr"></canvas></div></div>
+</div>
+
+<div class="card mb">
+  <div class="card-h"><h3 class="card-t clr-a">Stock-Level Detail — Full Period (Nov 2010–Sep 2026)</h3></div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Stock</th><th>Sector</th><th>Weight</th><th>CAGR</th><th>Volatility</th><th>Sharpe</th><th>Beta</th><th>VaR 95%</th><th>ES 95%</th><th>Max DD</th><th>₹ Allocation</th></tr></thead>
+    <tbody id="tbl-pa-det"></tbody>
+  </table></div>
+</div>
+
+<div class="card">
+  <div class="card-h">
+    <h3 class="card-t clr-a">Weight Comparison: Chosen vs Markowitz Optimal</h3>
+    <div class="tgl" id="tgl-pa">
+      <button class="on" onclick="tglPA(0,this)">Chosen vs Max Sharpe</button>
+      <button onclick="tglPA(1,this)">Chosen vs Min Variance</button>
+      <button onclick="tglPA(2,this)">All Three</button>
+    </div>
+  </div>
+  <div class="ch-l"><canvas id="c-pawc"></canvas></div>
+  <div class="callout warn" style="margin-top:.9rem">
+    <strong>Insight:</strong> Our CAGR-rank weighting (BEL 30%, ADANIENT 9.69%) achieves <strong>34.60% return</strong> with <strong>14.09% volatility</strong> — exceeding the Max-Sharpe portfolio's 25.16% return at similar risk! The CAGR-rank method rewards top performers proportionally, yielding a Sharpe of 0.491 vs optimizer's 2.201.
+  </div>
+</div>
+</section>
+
+<!-- ════════════ PORTFOLIO B ════════════ -->
+<section id="pb" class="sec">
+<h2 class="sec-title">Portfolio B — Low Risk · High Return</h2>
+<div class="g4 mb">
+  <div class="card card-b"><div class="kpi-l" style="color:var(--teal)">Strategy</div><div class="kpi-v" style="font-size:1rem;margin-top:.3rem">Risk-Score Weighted</div><div class="kpi-s">Inversely weighted by risk rank</div></div>
+  <div class="card card-b"><div class="kpi-l" style="color:var(--teal)">Ann. Return</div><div class="kpi-v clr-b">16.34%</div><div class="kpi-s" id="pb-ret">₹1,51,885 / yr</div></div>
+  <div class="card card-b"><div class="kpi-l" style="color:var(--teal)">Ann. Volatility</div><div class="kpi-v clr-g">13.54%</div><div class="kpi-s">Daily σ = 0.88%</div></div>
+  <div class="card card-b"><div class="kpi-l" style="color:var(--teal)">Sharpe Ratio</div><div class="kpi-v clr-b">0.727</div><div class="kpi-s">Rf = 6% annual</div></div>
+</div>
+
+<div class="g2 mb">
+  <div class="card"><div class="card-h"><h3 class="card-t clr-b">Weight Allocation (Risk-Score Based)</h3></div><div class="ch"><canvas id="c-pbw"></canvas></div></div>
+  <div class="card"><div class="card-h"><h3 class="card-t clr-b">Risk vs Return (Per Stock)</h3></div><div class="ch"><canvas id="c-pbrr"></canvas></div></div>
+</div>
+
+<div class="card mb">
+  <div class="card-h"><h3 class="card-t clr-b">Stock-Level Detail — Full Period (Nov 2010–Sep 2026)</h3></div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Stock</th><th>Sector</th><th>Weight</th><th>CAGR</th><th>Volatility</th><th>Sharpe</th><th>Beta</th><th>VaR 95%</th><th>ES 95%</th><th>Max DD</th><th>₹ Allocation</th></tr></thead>
+    <tbody id="tbl-pb-det"></tbody>
+  </table></div>
+</div>
+
+<div class="card">
+  <div class="card-h">
+    <h3 class="card-t clr-b">Weight Comparison: Chosen (Risk-Score) vs Markowitz Optimal</h3>
+  </div>
+  <div class="ch-l"><canvas id="c-pbwc"></canvas></div>
+  <div class="callout good" style="margin-top:.9rem">
+    <strong>Insight:</strong> Risk-score weighting (chosen) gives 20.87% return at 12.93% risk (Sharpe 1.150). The Min-Variance optimizer achieves 10.11% risk with 19.97% return, while Max-Sharpe achieves 23.99% return at 11.47% risk (Sharpe 1.569). The chosen risk-score mandate concentrates in SUNPHARMA (30%) and BHARTIARTL (20%) for mandate compliance, not pure optimization.
+  </div>
+</div>
+</section>
+
+<!-- ════════════ STRESS TESTS ════════════ -->
+<section id="stress" class="sec">
+<h2 class="sec-title">Time-Travel Stress Test</h2>
+<div class="callout info mb">
+  <strong>Method:</strong> We freeze portfolio weights and apply them to two distinct market regimes. This tests whether our risk classifications are <em>robust across regimes</em>, not just an artefact of the full-period data.
+</div>
+
+<div class="g2 mb">
+  <div class="card card-a">
+    <div class="card-h"><h3 class="card-t">📉 Calm Period (Jan 2015 – Dec 2018)</h3></div>
+    <div class="g2">
+      <div class="kpi"><div class="kpi-l">Port A Return</div><div class="kpi-v clr-a" style="font-size:1.2rem">8.80%</div></div>
+      <div class="kpi"><div class="kpi-l">Port B Return</div><div class="kpi-v clr-b" style="font-size:1.2rem">3.72%</div></div>
+      <div class="kpi"><div class="kpi-l">Port A Volatility</div><div class="kpi-v clr-r" style="font-size:1.2rem">20.38%</div></div>
+      <div class="kpi"><div class="kpi-l">Port B Volatility</div><div class="kpi-v clr-g" style="font-size:1.2rem">16.90%</div></div>
+      <div class="kpi"><div class="kpi-l">Port A MaxDD</div><div class="kpi-v clr-r" style="font-size:1.2rem">−32.36%</div></div>
+      <div class="kpi"><div class="kpi-l">Port B MaxDD</div><div class="kpi-v clr-g" style="font-size:1.2rem">−21.55%</div></div>
+    </div>
+  </div>
+  <div class="card card-ab">
+    <div class="card-h"><h3 class="card-t">🔥 Crisis Period (Jan 2020 – Dec 2021)</h3></div>
+    <div class="g2">
+      <div class="kpi"><div class="kpi-l">Port A Return</div><div class="kpi-v clr-a" style="font-size:1.2rem">51.82%</div></div>
+      <div class="kpi"><div class="kpi-l">Port B Return</div><div class="kpi-v clr-b" style="font-size:1.2rem">33.91%</div></div>
+      <div class="kpi"><div class="kpi-l">Port A Volatility</div><div class="kpi-v clr-r" style="font-size:1.2rem">31.48%</div></div>
+      <div class="kpi"><div class="kpi-l">Port B Volatility</div><div class="kpi-v clr-g" style="font-size:1.2rem">24.36%</div></div>
+      <div class="kpi"><div class="kpi-l">Port A MaxDD</div><div class="kpi-v clr-r" style="font-size:1.2rem">−44.34%</div></div>
+      <div class="kpi"><div class="kpi-l">Port B MaxDD</div><div class="kpi-v clr-g" style="font-size:1.2rem">−31.46%</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="g2 mb">
+  <div class="card">
+    <div class="card-h"><h3 class="card-t">Calm Period Cumulative Returns</h3></div>
+    <div class="ch"><canvas id="c-cum-calm"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-h"><h3 class="card-t">Crisis Period Cumulative Returns</h3></div>
+    <div class="ch"><canvas id="c-cum-crisis"></canvas></div>
+  </div>
+</div>
+
+<div class="g2 mb">
+  <div class="card">
+    <div class="card-h"><h3 class="card-t">VaR Comparison Across Regimes</h3></div>
+    <div class="ch"><canvas id="c-var"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-h"><h3 class="card-t">Expected Shortfall Across Regimes</h3></div>
+    <div class="ch"><canvas id="c-es"></canvas></div>
+  </div>
+</div>
+
+<div class="card mb">
+  <div class="card-h"><h3 class="card-t">VaR & ES in Rupees — What Could You Lose?</h3><span class="flag">Based on ₹<span class="cap-disp">15,00,000</span> capital</span></div>
+  <div class="tbl-wrap"><table>
+    <thead>
+      <tr><th>Metric</th><th colspan="2" style="text-align:center;background:#e8eef7">Calm (2015–2018)</th><th colspan="2" style="text-align:center;background:#fff3e0">Crisis (2020–2021)</th></tr>
+      <tr><th></th><th class="clr-a">Port A</th><th class="clr-b">Port B</th><th class="clr-a">Port A</th><th class="clr-b">Port B</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Hist VaR 95%</td><td id="s-ac1" class="clr-r"></td><td id="s-bc1" class="clr-r"></td><td id="s-ak1" class="clr-r"></td><td id="s-bk1" class="clr-r"></td></tr>
+      <tr><td>Hist VaR 99%</td><td id="s-ac2" class="clr-r"></td><td id="s-bc2" class="clr-r"></td><td id="s-ak2" class="clr-r"></td><td id="s-bk2" class="clr-r"></td></tr>
+      <tr><td>Param VaR 95%</td><td id="s-ac3" class="clr-r"></td><td id="s-bc3" class="clr-r"></td><td id="s-ak3" class="clr-r"></td><td id="s-bk3" class="clr-r"></td></tr>
+      <tr><td>Param VaR 99%</td><td id="s-ac4" class="clr-r"></td><td id="s-bc4" class="clr-r"></td><td id="s-ak4" class="clr-r"></td><td id="s-bk4" class="clr-r"></td></tr>
+      <tr style="border-top:2px solid var(--border)"><td>Hist ES 95%</td><td id="s-ac5" class="clr-r"></td><td id="s-bc5" class="clr-r"></td><td id="s-ak5" class="clr-r"></td><td id="s-bk5" class="clr-r"></td></tr>
+      <tr><td>Hist ES 99%</td><td id="s-ac6" class="clr-r"></td><td id="s-bc6" class="clr-r"></td><td id="s-ak6" class="clr-r"></td><td id="s-bk6" class="clr-r"></td></tr>
+      <tr><td>Param ES 95%</td><td id="s-ac7" class="clr-r"></td><td id="s-bc7" class="clr-r"></td><td id="s-ak7" class="clr-r"></td><td id="s-bk7" class="clr-r"></td></tr>
+      <tr><td>Param ES 99%</td><td id="s-ac8" class="clr-r"></td><td id="s-bc8" class="clr-r"></td><td id="s-ak8" class="clr-r"></td><td id="s-bk8" class="clr-r"></td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<div class="callout good">
+  <strong>✅ Finding 1:</strong> Portfolio A (CAGR-rank weights) achieves <em>superior risk-adjusted returns</em> — Sharpe of 0.491 vs Portfolio B's 1.037. Portfolio A's 34.60% return with only 14.09% vol demonstrates that CAGR-rank weighting effectively captures BEL's outstanding performance.<br>
+  <strong>✅ Finding 2:</strong> During COVID crisis, Portfolio A's 99% Hist VaR was −3.60% vs Portfolio B's −3.21% — a 12% larger tail loss. The BEL-heavy weighting reduced crisis downside vs old weights (was −5.47%), while crisis returns surged to 108%+ driven by BEL's post-COVID rally.<br>
+  <strong>✅ Finding 3:</strong> Volatility amplification is asymmetric. Portfolio A's vol rises from 14.09%→19.84% (39% amplification in crisis) vs Portfolio B's +45% increase (13.99%→24.01%).
+</div>
+</section>
+
+<!-- ════════════ EFFICIENT FRONTIER ════════════ -->
+<section id="mkw" class="sec">
+<h2 class="sec-title">Time-Travel Test 2 — Efficient Frontier & Markowitz Optimization</h2>
+<div class="callout info mb">
+  <strong>Method:</strong> We ran the Markowitz mean-variance optimizer on each portfolio's 10 stocks (using full-period returns and covariance matrix) to find two special portfolios:
+  <strong>Max Sharpe Ratio</strong> (best return-per-unit-risk) and <strong>Min Variance</strong> (lowest possible risk). We then compare our chosen weights against the mathematically optimal allocations.
+</div>
+
+<div class="g2 mb">
+  <div class="card">
+    <div class="card-h"><h3 class="card-t">Efficient Frontier — Portfolio A</h3></div>
+    <div class="ch-l"><canvas id="c-ef-a"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-h"><h3 class="card-t">Efficient Frontier — Portfolio B</h3></div>
+    <div class="ch-l"><canvas id="c-ef-b"></canvas></div>
+  </div>
+</div>
+
+<div class="g2 mb">
+  <div class="card card-a">
+    <div class="card-h"><h3 class="card-t clr-a">Portfolio A — Weight Comparison</h3></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Stock</th><th>Chosen (CAGR)</th><th>Max Sharpe</th><th>Min Variance</th></tr></thead>
+      <tbody id="tbl-mkw-a"></tbody>
+      <tfoot>
+        <tr style="border-top:2px solid var(--text);font-weight:700"><td>Ann. Return</td><td>16.72%</td><td>33.02%</td><td>30.50%</td></tr>
+        <tr style="font-weight:700"><td>Ann. Risk</td><td>20.82%</td><td>12.28%</td><td>11.71%</td></tr>
+        <tr style="font-weight:700"><td>Sharpe (ann.)</td><td>0.491</td><td>2.201</td><td>2.092</td></tr>
+      </tfoot>
+    </table></div>
+  </div>
+  <div class="card card-b">
+    <div class="card-h"><h3 class="card-t clr-b">Portfolio B — Weight Comparison</h3></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Stock</th><th>Chosen (Risk-Score)</th><th>Max Sharpe</th><th>Min Variance</th></tr></thead>
+      <tbody id="tbl-mkw-b"></tbody>
+      <tfoot>
+        <tr style="border-top:2px solid var(--text);font-weight:700"><td>Ann. Return</td><td>20.87%</td><td>23.99%</td><td>19.97%</td></tr>
+        <tr style="font-weight:700"><td>Ann. Risk</td><td>12.93%</td><td>11.47%</td><td>10.11%</td></tr>
+        <tr style="font-weight:700"><td>Sharpe (ann.)</td><td>1.150</td><td>1.569</td><td>1.382</td></tr>
+      </tfoot>
+    </table></div>
+  </div>
+</div>
+
+<div class="g2">
+  <div class="callout danger">
+    <strong>Portfolio A — What did we leave on the table?</strong><br>
+    Our CAGR-rank weighting (BEL 30%, ADANIENT 9.69%) achieves <strong>34.60% return</strong> at <strong>14.09% risk</strong> — Sharpe of 0.491. The Max-Sharpe optimizer (COALINDIA 16.6%, ADANIENT 14.7%, BEL 18.8%) achieves 33.02% return at 12.28% risk (Sharpe 2.201). Our chosen portfolio lies slightly <em>above</em> the frontier — a testament to BEL's exceptional CAGR (49%) overwhelming the optimizer's diversification focus.<br><br>
+    <span class="flag">Note: Efficient frontier points are illustrative (based on 2-asset interpolation). Actual frontier requires full covariance-constrained optimization.</span>
+  </div>
+  <div class="callout good">
+    <strong>Portfolio B — Equal Weight is Near-Optimal!</strong><br>
+    The Min-Variance optimizer reduces portfolio risk to 10.11% (return 19.97%, Sharpe 1.382) by spreading weight across POWERGRID (16.9%), NTPC (14.6%) and BAJAJ-AUTO (10.7%). The Max-Sharpe optimizer achieves 23.99% return at 11.47% risk (Sharpe 1.569) by concentrating in TITAN (19.8%), BAJAJ-AUTO (15.4%), APOLLOHOSP (14.4%). Our risk-score chosen weights give Sharpe 1.150 — lower than both optimized portfolios but ensures SUNPHARMA/BHARTIARTL exposure per the original risk mandate.
+  </div>
+</div>
+</section>
+
+<!-- ════════════ CORRELATION ════════════ -->
+<section id="corr" class="sec">
+<h2 class="sec-title">Correlation Analysis</h2>
+<div class="callout info mb">
+  <strong>Why correlation matters:</strong> Low pairwise correlation between stocks is what makes diversification effective. A portfolio of volatile stocks can still have low portfolio volatility if the stocks move independently. Portfolio B's average correlation ≈ 0.065 vs Portfolio A's ≈ 0.033 — both are well-diversified.
+</div>
+
+<div class="g2 mb">
+  <div class="card card-a">
+    <div class="card-h"><h3 class="card-t clr-a">Portfolio A — Correlation Heatmap</h3></div>
+    <div id="hm-a" style="overflow-x:auto"></div>
+  </div>
+  <div class="card card-b">
+    <div class="card-h"><h3 class="card-t clr-b">Portfolio B — Correlation Heatmap</h3></div>
+    <div id="hm-b" style="overflow-x:auto"></div>
+  </div>
+</div>
+
+<div class="g2">
+  <div class="card">
+    <div class="card-h"><h3 class="card-t">Portfolio A — Avg Pairwise Correlation by Stock</h3></div>
+    <div class="ch-s"><canvas id="c-corr-a"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-h"><h3 class="card-t">Portfolio B — Avg Pairwise Correlation by Stock</h3></div>
+    <div class="ch-s"><canvas id="c-corr-b"></canvas></div>
+  </div>
+</div>
+</section>
+
+<!-- ════════════ FINDINGS ════════════ -->
+<section id="fin" class="sec">
+<h2 class="sec-title">Key Findings & Summary</h2>
+
+<div class="g2 mb">
+  <div>
+    <div class="callout good"><strong>1. Risk Labels Hold Under Stress ✅</strong><br>Portfolio A exceeds Portfolio B's VaR, ES, volatility, and drawdown across <em>all three time periods</em>. The classification is not overfitted to the full period — it's regime-robust.</div>
+    <div class="callout good"><strong>2. Crisis Amplifies Risk Asymmetrically ✅</strong><br>Portfolio A's volatility nearly doubles in the COVID crisis (22.3%→31.1%). Portfolio B's rise is more modest (+44%). This confirms that "high-risk" stocks suffer disproportionately during tail events.</div>
+    <div class="callout good"><strong>3. ES Consistently Worse Than VaR ✅</strong><br>In every scenario, ES (CVaR) reveals a deeper tail than VaR suggests. Crisis PA: VaR 99% = −5.47% but ES 99% = −7.60% — <em>on the worst 1% of days, average loss is 39% worse than VaR implies</em>. This is the core regulatory justification for shifting from VaR to ES (Basel III).</div>
+  </div>
+  <div>
+    <div class="callout warn"><strong>4. Intuitive Weights ≠ Optimal Weights ⚠️</strong><br>Portfolio A's CAGR-rank weighting underperforms Max-Sharpe by ≈6.6% annual return at the same risk level. Intuitive metrics (CAGR rank) do not capture risk-adjusted return optimization.</div>
+    <div class="callout warn"><strong>5. Historical vs Parametric VaR Diverge in Crises ⚠️</strong><br>During calm periods, both methods agree closely. During crisis, Parametric VaR is less severe than Historical VaR — because the normal distribution assumption understates fat tails when actual return distributions become highly leptokurtic.</div>
+    <div class="callout danger"><strong>6. Portfolio B Dominates on Risk-Adjusted Basis 🏆</strong><br>Portfolio B delivers more return (21.5% vs 18.6%), far less risk (13.0% vs 22.3%), better Sharpe (1.04 vs 0.50), smaller drawdown (24.5% vs 26.12%), and lower VaR/ES. By every risk-adjusted metric, Portfolio B is the superior allocation.</div>
+  </div>
+</div>
+
+<div class="card mb">
+  <div class="card-h"><h3 class="card-t">Final Risk-Return Summary</h3></div>
+  <div class="ch"><canvas id="c-scatter-final"></canvas></div>
+</div>
+
+<div class="card">
+  <div class="card-h"><h3 class="card-t">Limitations & Future Work</h3></div>
+  <ul style="padding-left:1.3rem;font-size:.88rem;color:var(--muted);line-height:2.2">
+    <li>No GARCH modelling — volatility clustering and regime changes not captured</li>
+    <li>No Monte Carlo VaR — parametric assumes normality; actual returns are fat-tailed</li>
+    <li>Weights are frozen — no rebalancing modelled; real portfolios drift over time</li>
+    <li>Covariance matrix uses full-period data — rolling-window EWMA would be more accurate</li>
+    <li>Beta computed vs own portfolio return (not NIFTY) — cannot directly compare to market beta</li>
+    <li>Efficient frontier is approximated — full Lagrangian-constrained optimization with scipy would be more precise</li>
+    <li>Sector concentration in Portfolio A (2 Adani group stocks) increases idiosyncratic risk</li>
+  </ul>
+</div>
+</section>
+
+</main>
+<footer>© PGDM 2025–27 · Financial Risk Analytics · Prof. Priyadarshi Dutta · Great Lakes Institute of Management · Data: NSE/NIFTY 50 via Yahoo Finance · All computations in Python (numpy, scipy)</footer>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+//  REAL DATA FROM EXCEL (computed via Python/numpy)
+// ─────────────────────────────────────────────────────────────
+const D = {
+  pa: {
+    stocks: ['SBIN','M&M','ONGC','COALINDIA','HINDALCO','EICHERMOT','ADANIENT','ADANIPORTS','TATAPOWER','BEL'],
+    sectors: ['Banking','Automobile','Energy','Mining','Metals','Automobile','Conglomerate','Infrastructure','Power','Defence'],
+    weights_chosen: [0.0742, 0.0784, 0.066, 0.0906, 0.0766, 0.0587, 0.0969, 0.0714, 0.0871, 0.3001],
+    weights_max_sharpe: [0.04, 0.0672, 0.0763, 0.1659, 0.1075, 0.04, 0.1466, 0.0786, 0.0899, 0.1881],
+    weights_min_var: [0.04, 0.0805, 0.1118, 0.1603, 0.1305, 0.0629, 0.1227, 0.1091, 0.0851, 0.0972],
+    full:  {ann_ret:0.16722,ann_vol:0.20818,sharpe:0.49131,maxdd:-0.22228,hvar95:-0.01470,hvar99:-0.02387,hes95:-0.02106,hes99:-0.03302,pvar95:-0.01460,pvar99:-0.02065,pes95:-0.01831,pes99:-0.02366},
+    calm:  {ann_ret:0.08802,ann_vol:0.20384,sharpe:0.11291,maxdd:-0.32358,hvar95:-0.02067,hvar99:-0.03509,hes95:-0.03030,hes99:-0.04596,pvar95:-0.02112,pvar99:-0.02987,pes95:-0.02649,pes99:-0.03422},
+    crisis:{ann_ret:0.51825,ann_vol:0.31483,sharpe:1.43965,maxdd:-0.44338,hvar95:-0.03173,hvar99:-0.05714,hes95:-0.04907,hes99:-0.07890,pvar95:-0.03262,pvar99:-0.04614,pes95:-0.04091,pes99:-0.05286},
+    markowitz:{chosen_ret:0.34601,chosen_risk:0.14090,maxsharpe_ret:0.33015,maxsharpe_risk:0.12276,minvar_ret:0.30500,minvar_risk:0.11713},
+    stocks_data:[
+      {stock:'SBIN',sector:'Banking',weight:0.06,cagr:0.2655,vol:0.51341,sharpe:0.56907,beta:0.04402,var95:-0.0431,es95:-0.07141,maxdd:-0.80796},
+      {stock:'M&M',sector:'Automobile',weight:0.05,cagr:0.2803,vol:0.38066,sharpe:0.45921,beta:-0.03168,var95:-0.03316,es95:-0.05372,maxdd:-0.53242},
+      {stock:'ONGC',sector:'Energy',weight:0.04,cagr:0.2360,vol:0.3417,sharpe:0.62975,beta:0.01175,var95:-0.03039,es95:-0.0441,maxdd:-0.67204},
+      {stock:'COALINDIA',sector:'Mining',weight:0.20,cagr:0.3241,vol:0.29027,sharpe:0.23827,beta:0.00598,var95:-0.02836,es95:-0.03875,maxdd:-0.64649},
+      {stock:'HINDALCO',sector:'Metals',weight:0.07,cagr:0.2741,vol:0.31128,sharpe:0.8009,beta:0.43346,var95:-0.02851,es95:-0.04069,maxdd:-0.60665},
+      {stock:'EICHERMOT',sector:'Automobile',weight:0.04,cagr:0.2100,vol:0.38862,sharpe:0.29813,beta:0.1054,var95:-0.03843,es95:-0.05307,maxdd:-0.74321},
+      {stock:'ADANIENT',sector:'Conglomerate',weight:0.07,cagr:0.3465,vol:0.29899,sharpe:0.42165,beta:0.16064,var95:-0.02815,es95:-0.04081,maxdd:-0.72277},
+      {stock:'ADANIPORTS',sector:'Infrastructure',weight:0.07,cagr:0.2552,vol:0.32299,sharpe:0.11749,beta:-0.02381,var95:-0.02897,es95:-0.04403,maxdd:-0.76791},
+      {stock:'TATAPOWER',sector:'Power',weight:0.10,cagr:0.3115,vol:0.32467,sharpe:0.21997,beta:0.28814,var95:-0.03071,es95:-0.04431,maxdd:-0.59492},
+      {stock:'BEL',sector:'Defence',weight:0.30,cagr:0.4903,vol:0.33772,sharpe:0.2207,beta:0.03698,var95:-0.03309,es95:-0.04692,maxdd:-0.7687}
+    ],
+    corr:[[1.0,0.03,-0.005,-0.017,0.027,0.084,0.039,0.106,0.028,0.047],[0.03,1.0,-0.009,0.016,-0.007,0.037,0.008,0.041,0.015,0.042],[-0.005,-0.009,1.0,0.001,-0.024,0.031,0.005,0.001,0.069,0.003],[-0.017,0.016,0.001,1.0,-0.009,-0.008,-0.009,-0.012,0.012,0.037],[0.027,-0.007,-0.024,-0.009,1.0,0.009,0.05,0.008,0.055,0.009],[0.084,0.037,0.031,-0.008,0.009,1.0,0.05,0.046,0.067,0.039],[0.039,0.008,0.005,-0.009,0.05,0.05,1.0,0.013,0.133,0.021],[0.106,0.041,0.001,-0.012,0.008,0.046,0.013,1.0,0.035,0.035],[0.028,0.015,0.069,0.012,0.055,0.067,0.133,0.035,1.0,0.004],[0.047,0.042,0.003,0.037,0.009,0.039,0.021,0.035,0.004,1.0]],
+  },
+  pb: {
+    stocks: ['ICICIBANK','BHARTIARTL','LT','SUNPHARMA','TITAN','NTPC','POWERGRID','APOLLOHOSP','BAJAJ-AUTO','GRASIM'],
+    sectors: ['Banking','Telecom','Infrastructure','Pharma','Consumer','Power','Power','Healthcare','Automobile','Materials'],
+    weights_chosen: [0.10,0.20,0.04,0.30,0.07,0.05,0.06,0.04,0.07,0.07],
+    weights_max_sharpe: [0.04, 0.0403, 0.0418, 0.1266, 0.198, 0.0422, 0.1284, 0.1435, 0.1544, 0.0848],
+    weights_min_var: [0.0485, 0.0751, 0.085, 0.1055, 0.077, 0.1457, 0.1691, 0.0867, 0.1075, 0.0998],
+    full:  {ann_ret:0.16337,ann_vol:0.13543,sharpe:0.72705,maxdd:-0.17654,hvar95:-0.01221,hvar99:-0.02032,hes95:-0.01753,hes99:-0.02595,pvar95:-0.01266,pvar99:-0.01823,pes95:-0.01608,pes99:-0.021},
+    calm:  {ann_ret:0.03725,ann_vol:0.16903,sharpe:-0.16419,maxdd:-0.21545,hvar95:-0.01748,hvar99:-0.02637,hes95:-0.02361,hes99:-0.03367,pvar95:-0.01751,pvar99:-0.02477,pes95:-0.02196,pes99:-0.02838},
+    crisis:{ann_ret:0.33914,ann_vol:0.24358,sharpe:1.12545,maxdd:-0.31465,hvar95:-0.02028,hvar99:-0.03841,hes95:-0.03711,hes99:-0.06887,pvar95:-0.02524,pvar99:-0.03570,pes95:-0.03165,pes99:-0.04090},
+    markowitz:{chosen_ret:0.20871,chosen_risk:0.12928,maxsharpe_ret:0.23994,maxsharpe_risk:0.11470,minvar_ret:0.19969,minvar_risk:0.10109},
+    stocks_data:[
+      {stock:'ICICIBANK',sector:'Banking',weight:0.1,cagr:0.2065,vol:0.3072,sharpe:0.416,beta:0.9722,var95:-0.0279,es95:-0.041,maxdd:-0.5153},
+      {stock:'BHARTIARTL',sector:'Telecom',weight:0.2,cagr:0.1731,vol:0.2986,sharpe:0.334,beta:1.3444,var95:-0.0282,es95:-0.0394,maxdd:-0.4678},
+      {stock:'LT',sector:'Infrastructure',weight:0.04,cagr:0.1637,vol:0.2809,sharpe:0.326,beta:0.4472,var95:-0.0259,es95:-0.0383,maxdd:-0.546},
+      {stock:'SUNPHARMA',sector:'Pharma',weight:0.3,cagr:0.2179,vol:0.2744,sharpe:0.5,beta:1.5242,var95:-0.025,es95:-0.0376,maxdd:-0.7146},
+      {stock:'TITAN',sector:'Consumer',weight:0.07,cagr:0.3627,vol:0.315,sharpe:0.793,beta:0.6237,var95:-0.0278,es95:-0.0427,maxdd:-0.4173},
+      {stock:'NTPC',sector:'Power',weight:0.05,cagr:0.1053,vol:0.2599,sharpe:0.154,beta:0.225,var95:-0.0244,es95:-0.0349,maxdd:-0.4694},
+      {stock:'POWERGRID',sector:'Power',weight:0.06,cagr:0.1652,vol:0.2424,sharpe:0.384,beta:0.2265,var95:-0.0226,es95:-0.0321,maxdd:-0.2956},
+      {stock:'APOLLOHOSP',sector:'Healthcare',weight:0.04,cagr:0.2806,vol:0.3164,sharpe:0.592,beta:0.3877,var95:-0.0276,es95:-0.0414,maxdd:-0.3942},
+      {stock:'BAJAJ-AUTO',sector:'Automobile',weight:0.07,cagr:0.2373,vol:0.2559,sharpe:0.598,beta:0.5683,var95:-0.0233,es95:-0.0341,maxdd:-0.4231},
+      {stock:'GRASIM',sector:'Materials',weight:0.07,cagr:0.1875,vol:0.2768,sharpe:0.404,beta:0.5028,var95:-0.0247,es95:-0.0374,maxdd:-0.6859}
+    ],
+    corr:[[1.0,0.117,0.08,0.082,0.107,-0.007,0.005,0.151,0.114,0.059],[0.117,1.0,0.063,0.083,0.054,-0.006,-0.006,0.017,0.155,0.021],[0.08,0.063,1.0,0.029,0.067,-0.017,-0.003,0.017,0.072,0.208],[0.082,0.083,0.029,1.0,0.018,0.023,0.012,0.009,0.04,0.049],[0.107,0.054,0.067,0.018,1.0,-0.016,0.001,0.029,0.041,0.069],[-0.007,-0.006,-0.017,0.023,-0.016,1.0,0.027,0.014,0.03,-0.018],[0.005,-0.006,-0.003,0.012,0.001,0.027,1.0,-0.02,0.018,-0.002],[0.151,0.017,0.017,0.009,0.029,0.014,-0.02,1.0,0.037,0.005],[0.114,0.155,0.072,0.04,0.041,0.03,0.018,0.037,1.0,0.018],[0.059,0.021,0.208,0.049,0.069,-0.018,-0.002,0.005,0.018,1.0]],
+  }
+};
+
+// Cumulative series (sampled ~every 21 trading days = ~1 month)
+const CUM_A = [1.0000,1.0323,1.0923,1.1255,1.1654,1.1390,1.2253,1.2778,1.3188,1.2853,1.3547,1.3740,1.4040,1.3406,1.3786,1.3593,1.4357,1.3838,1.3399,1.2675,1.3296,1.2624,1.1526,1.1843,1.1721,1.1329,1.2270,1.1587,1.2862,1.3207,1.3238,1.3418,1.3769,1.3721,1.3267,1.3497,1.3639,1.4139,1.4134,1.4617,1.4577,1.4401,1.4148,1.4805,1.3988,1.4927,1.5196,1.4568,1.4388,1.5841,1.6274,1.5700,1.5662,1.5558,1.5470,1.5189,1.5593,1.5199,1.5169,1.4782];
+const CUM_B = [1.0000,1.0368,1.0887,1.1391,1.1778,1.1732,1.1661,1.1997,1.2051,1.1823,1.2324,1.2823,1.3333,1.3128,1.3784,1.4295,1.4712,1.4293,1.3700,1.3617,1.3805,1.3606,1.3045,1.3166,1.3107,1.2414,1.3128,1.3022,1.4229,1.3948,1.3897,1.3940,1.4346,1.4094,1.4003,1.4242,1.4008,1.4134,1.4318,1.4843,1.4859,1.4891,1.4653,1.5096,1.4221,1.5029,1.5115,1.4516,1.4222,1.4897,1.5283,1.5336,1.4948,1.5522,1.5867,1.6166,1.6287,1.6139,1.5760,1.5141];
+const DD_A = [0.0000,0.0000,0.0000,0.0000,0.0000,-2.2645,0.0000,0.0000,0.0000,-2.5463,0.0000,0.0000,0.0000,-4.5133,-1.8097,-3.1785,0.0000,-3.6186,-6.6731,-11.7184,-7.3938,-12.0724,-19.7170,-17.5126,-18.3633,-21.0933,-14.5371,-19.2921,-10.4173,-8.0141,-7.7983,-6.5436,-4.0972,-4.4339,-7.5926,-5.9920,-5.0031,-1.5187,-1.5529,0.0000,-0.2723,-1.4774,-3.2067,0.0000,-5.5158,0.0000,0.0000,-4.1340,-5.3197,0.0000,0.0000,-3.5254,-3.7552,-4.3990,-4.9375,-6.6634,-4.1847,-6.6038,-6.7869,-9.1682];
+const DD_B = [0.0000,0.0000,0.0000,0.0000,0.0000,-0.3895,-0.9979,0.0000,0.0000,-1.8930,0.0000,0.0000,0.0000,-1.5347,0.0000,0.0000,0.0000,-2.8519,-6.8824,-7.4450,-6.1638,-7.5173,-11.3351,-10.5118,-10.9086,-15.6180,-10.7650,-11.4882,-3.2849,-5.1934,-5.5418,-5.2471,-2.4900,-4.2019,-4.8201,-3.1958,-4.7859,-3.9328,-2.6814,0.0000,0.0000,0.0000,-1.6013,0.0000,-5.7972,-0.4465,0.0000,-3.9675,-5.9123,-1.4469,0.0000,0.0000,-2.5283,0.0000,0.0000,0.0000,0.0000,-0.9093,-3.2353,-7.0326];
+
+const CUM_A_CALM = [1.0000,1.0640,1.0770,1.0033,0.9606,0.9528,0.9786,0.9936,0.8229,0.8999,0.8906,0.8257,0.8615,0.7869,0.7986,0.8602,0.8486,0.9247,0.9554,0.9993,1.0069,1.0359,0.9908,1.0343,1.0684,1.1253,1.1731,1.1935,1.1879,1.2001,1.2237,1.1917,1.2548,1.2614,1.3697,1.3790,1.4087,1.3389,1.2349,1.3243,1.2900,1.2381,1.2431,1.3337,1.2617,1.2773,1.2727,1.3006];
+const CUM_B_CALM = [1.0000,1.0829,1.0825,1.1619,1.0487,1.0354,1.0859,1.0575,0.9899,1.0384,0.9929,0.9519,0.9695,0.9659,0.9879,1.0099,1.0142,1.0139,1.0814,1.0813,1.0704,1.0412,0.9810,0.9589,1.0019,1.0534,1.0971,1.0830,1.1086,1.0601,1.1525,1.0813,1.1245,1.1872,1.2505,1.2569,1.2969,1.1918,1.1494,1.1845,1.1204,1.1728,1.1424,1.2472,1.2366,1.1349,1.1258,1.0939];
+const CUM_A_CRISIS = [1.0000,0.9994,0.8104,0.5838,0.6085,0.7787,0.8562,0.9138,0.9598,0.9394,1.0201,1.2563,1.4255,1.5294,1.6323,1.5981,1.8015,1.9079,1.8980,1.9426,2.1749,2.4811,2.5048,2.5255];
+const CUM_B_CRISIS = [1.0000,1.0323,0.9596,0.7816,0.9177,1.0089,1.0133,1.0620,1.0383,1.0307,1.1097,1.2263,1.3208,1.4267,1.3427,1.3772,1.4789,1.4868,1.5318,1.6172,1.7650,1.8107,1.7890,1.8440];
+
+// ─────────────────────────────────────────────────────────────
+//  PALETTE
+// ─────────────────────────────────────────────────────────────
+const PA = {solid:'#0f2d5e',light:'rgba(15,45,94,.2)',mid:'rgba(15,45,94,.55)'};
+const PB = {solid:'#0d6e6e',light:'rgba(13,110,110,.2)',mid:'rgba(13,110,110,.55)'};
+const GREY = {solid:'#9ca3af',light:'rgba(156,163,175,.25)'};
+const AM = '#b45309';
+
+Chart.defaults.font.family = "'Inter',-apple-system,sans-serif";
+Chart.defaults.color = '#6b7280';
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
+Chart.defaults.plugins.legend.labels.padding = 14;
+
+// ─────────────────────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────────────────────
+let cap = 1500000;
+const charts = {};
+let paWtMode = 0; // 0=chosen+maxsharpe, 1=chosen+minvar, 2=all three
+
+// ─────────────────────────────────────────────────────────────
+//  HELPERS
+// ─────────────────────────────────────────────────────────────
+const pct = (v,d=2) => (v*100).toFixed(d)+'%';
+const rupee = v => '₹'+Math.abs(Math.round(v)).toLocaleString('en-IN');
+const neg = v => '−'+rupee(v);
+
+function capChange(v){
+  const n = parseFloat(v.replace(/[,₹\s]/g,''));
+  if(n>0){ cap=n; document.getElementById('cap').value=n.toLocaleString('en-IN'); updateAll(); }
+}
+
+function go(id,btn){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  btn.classList.add('on');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ─────────────────────────────────────────────────────────────
+//  UPDATE RUPEE VALUES
+// ─────────────────────────────────────────────────────────────
+function updateAll(){
+  const x = cap;
+  const pa = D.pa.full; const pb = D.pb.full;
+  const pac = D.pa.calm; const pbc = D.pb.calm;
+  const pak = D.pa.crisis; const pbk = D.pb.crisis;
+
+  document.getElementById('ov-ar').textContent = rupee(x*pa.ann_ret)+' / yr';
+  document.getElementById('ov-av').textContent = '−'+rupee(x*Math.abs(pa.hvar95));
+  document.getElementById('ov-add').textContent = '−'+rupee(x*Math.abs(pa.maxdd));
+  document.getElementById('ov-br').textContent = rupee(x*pb.ann_ret)+' / yr';
+  document.getElementById('ov-bv').textContent = '−'+rupee(x*Math.abs(pb.hvar95));
+  document.getElementById('ov-bdd').textContent = '−'+rupee(x*Math.abs(pb.maxdd));
+  document.getElementById('ov-avt').textContent = rupee(x*Math.abs(pa.hvar95));
+  document.getElementById('ov-bvt').textContent = rupee(x*Math.abs(pb.hvar95));
+  document.getElementById('ov-diff').textContent = rupee(x*(Math.abs(pa.hvar95)-Math.abs(pb.hvar95)));
+  document.getElementById('pa-ret').textContent = rupee(x*pa.ann_ret)+' / yr';
+  document.getElementById('pb-ret').textContent = rupee(x*pb.ann_ret)+' / yr';
+
+  // Master table ₹ cells
+  const rup = (v) => '−'+rupee(x*Math.abs(v));
+  document.getElementById('t-av').innerHTML = '<strong>'+rup(pa.hvar95)+'</strong>';
+  document.getElementById('t-bv').innerHTML = '<strong>'+rup(pb.hvar95)+'</strong>';
+  document.getElementById('t-avc').innerHTML = '<strong>'+rup(pac.hvar95)+'</strong>';
+  document.getElementById('t-bvc').innerHTML = '<strong>'+rup(pbc.hvar95)+'</strong>';
+  document.getElementById('t-avk').innerHTML = '<strong>'+rup(pak.hvar95)+'</strong>';
+  document.getElementById('t-bvk').innerHTML = '<strong>'+rup(pbk.hvar95)+'</strong>';
+
+  // Stress table rupee values
+  const sv = [
+    [pac.hvar95,pac.hvar99,pac.pvar95,pac.pvar99,pac.hes95,pac.hes99,pac.pes95,pac.pes99],
+    [pbc.hvar95,pbc.hvar99,pbc.pvar95,pbc.pvar99,pbc.hes95,pbc.hes99,pbc.pes95,pbc.pes99],
+    [pak.hvar95,pak.hvar99,pak.pvar95,pak.pvar99,pak.hes95,pak.hes99,pak.pes95,pak.pes99],
+    [pbk.hvar95,pbk.hvar99,pbk.pvar95,pbk.pvar99,pbk.hes95,pbk.hes99,pbk.pes95,pbk.pes99],
+  ];
+  const ids = ['s-ac','s-bc','s-ak','s-bk'];
+  sv.forEach((arr,pi)=>arr.forEach((v,j)=>{
+    const el = document.getElementById(ids[pi]+(j+1));
+    if(el) el.textContent = '−'+rupee(x*Math.abs(v));
+  }));
+
+  // Portfolio detail allocation column
+  D.pa.stocks_data.forEach((s,i)=>{
+    const el = document.getElementById('pa-alloc-'+i);
+    if(el) el.textContent = rupee(x*s.weight);
+  });
+  D.pb.stocks_data.forEach((s,i)=>{
+    const el = document.getElementById('pb-alloc-'+i);
+    if(el) el.textContent = rupee(x*s.weight);
+  });
+
+  // Cap display spans
+  document.querySelectorAll('.cap-disp').forEach(el=>el.textContent = x.toLocaleString('en-IN'));
+}
+
+// ─────────────────────────────────────────────────────────────
+//  TABLES
+// ─────────────────────────────────────────────────────────────
+function buildTables(){
+  // Methodology selection tables
+  ['pa','pb'].forEach(p=>{
+    const tbdy = document.querySelector('#tbl-'+p+'-sel tbody');
+    D[p].stocks_data.forEach(s=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${s.stock}</td><td>${s.sector}</td><td>${pct(s.weight,0)}</td><td>${pct(s.cagr,1)}</td><td>${pct(s.vol,1)}</td><td>${s.sharpe.toFixed(2)}</td><td class="clr-r">${pct(s.var95,2)}</td>`;
+      tbdy.appendChild(tr);
+    });
+  });
+
+  // Portfolio detail tables
+  const detailTbl = (p)=>{
+    const tbdy = document.getElementById('tbl-'+p+'-det');
+    if(!tbdy) return;
+    D[p].stocks_data.forEach((s,i)=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td><strong>${s.stock}</strong></td><td>${s.sector}</td>
+        <td>${pct(s.weight,0)}</td>
+        <td>${pct(s.cagr,1)}</td>
+        <td class="clr-r">${pct(s.vol,1)}</td>
+        <td>${s.sharpe.toFixed(2)}</td>
+        <td>${s.beta.toFixed(2)}</td>
+        <td class="clr-r">${pct(s.var95,2)}</td>
+        <td class="clr-r">${pct(s.es95,2)}</td>
+        <td class="clr-r">${pct(s.maxdd,1)}</td>
+        <td id="${p}-alloc-${i}">₹${Math.round(cap*s.weight).toLocaleString('en-IN')}</td>`;
+      tbdy.appendChild(tr);
+    });
+  };
+  detailTbl('pa'); detailTbl('pb');
+
+  // Markowitz tables
+  ['a','b'].forEach(p=>{
+    const tbdy = document.getElementById('tbl-mkw-'+p);
+    if(!tbdy) return;
+    const dp = p==='a'?D.pa:D.pb;
+    dp.stocks_data.forEach((s,i)=>{
+      const wc = dp.weights_chosen[i];
+      const ws = dp.weights_max_sharpe[i];
+      const wm = dp.weights_min_var[i];
+      const hi = Math.max(wc,ws,wm);
+      const style = v=>v===hi?`style="font-weight:700;color:var(--${p==='a'?'navy':'teal'})"`:''
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${s.stock}</td>
+        <td ${style(wc)}>${pct(wc,1)}</td>
+        <td ${style(ws)}>${pct(ws,1)}</td>
+        <td ${style(wm)}>${pct(wm,1)}</td>`;
+      tbdy.appendChild(tr);
+    });
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+//  CHARTS
+// ─────────────────────────────────────────────────────────────
+function initCharts(){
+  const N = CUM_A.length;
+  const labels = Array.from({length:N},(_,i)=>{
+    const yr = 2010 + Math.floor(i*16/N);
+    const mo = Math.floor((i*16/N - Math.floor(i*16/N))*12);
+    const mns=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return mns[mo]+" '"+String(yr).slice(2);
+  });
+
+  // ── CUMULATIVE GROWTH ──
+  charts.cum = new Chart(document.getElementById('c-cum'),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Portfolio A (×)',data:CUM_A,borderColor:PA.solid,backgroundColor:PA.light,borderWidth:2,pointRadius:0,fill:true,tension:.3},
+      {label:'Portfolio B (×)',data:CUM_B.slice(0,N),borderColor:PB.solid,backgroundColor:PB.light,borderWidth:2,pointRadius:0,fill:true,tension:.3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(2)}× (${rupee(cap*c.parsed.y)})`}}},
+      scales:{y:{title:{display:true,text:'Growth Multiple (1 = ₹15L)'},ticks:{callback:v=>v.toFixed(1)+'×'}},x:{ticks:{maxTicksLimit:12}}}}
+  });
+
+  // ── DRAWDOWN ──
+  charts.dd = new Chart(document.getElementById('c-dd'),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Portfolio A Drawdown',data:DD_A,borderColor:PA.solid,backgroundColor:'rgba(15,45,94,.15)',borderWidth:1.5,pointRadius:0,fill:true,tension:.2},
+      {label:'Portfolio B Drawdown',data:DD_B.slice(0,N),borderColor:PB.solid,backgroundColor:'rgba(13,110,110,.15)',borderWidth:1.5,pointRadius:0,fill:true,tension:.2}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      scales:{y:{title:{display:true,text:'Drawdown (%)'},ticks:{callback:v=>v.toFixed(0)+'%'}},x:{ticks:{maxTicksLimit:12}}},
+      plugins:{tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(1)}%`}}}}
+  });
+
+  // ── REGIME COMPARISON ──
+  charts.regime = new Chart(document.getElementById('c-regime'),{
+    type:'bar',
+    data:{labels:['Full Period\n(2010–2026)','Calm\n(2015–2018)','Crisis\n(2020–2021)'],
+      datasets:[
+        {label:'Port A Return',data:[34.60,13.46,108.31],backgroundColor:PA.solid,borderRadius:4},
+        {label:'Port B Return',data:[21.46,3.51,38.58],backgroundColor:PB.solid,borderRadius:4},
+        {label:'Port A Volatility',data:[14.09,15.74,19.84],backgroundColor:PA.light,borderColor:PA.solid,borderWidth:1.5,borderRadius:4},
+        {label:'Port B Volatility',data:[12.97,14.59,18.79],backgroundColor:PB.light,borderColor:PB.solid,borderWidth:1.5,borderRadius:4}
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{title:{display:true,text:'Annualised Return & Volatility (%) — All Regimes',font:{size:13}}},
+      scales:{y:{title:{display:true,text:'%'},ticks:{callback:v=>v+'%'}}}}
+  });
+
+  // ── 4-QUADRANT SCATTER ──
+  const excluded = [
+    {n:'RELIANCE',rs:19.2,rk:32.9},{n:'TCS',rs:2.1,rk:33},{n:'INFY',rs:8.5,rk:59.2},{n:'HDFCBANK',rs:12.8,rk:30.6},
+    {n:'ITC',rs:29.8,rk:14.4},{n:'HINDUNILVR',rs:4.3,rk:13.9},{n:'BAJFINANCE',rs:35.5,rk:80.5},{n:'KOTAKBANK',rs:10.6,rk:40.2},
+    {n:'AXISBANK',rs:38.9,rk:53.6},{n:'MARUTI',rs:27.7,rk:31.5},{n:'ULTRACEM',rs:47.5,rk:40.9},{n:'WIPRO',rs:6.4,rk:65.3},
+    {n:'HCLTECH',rs:25.5,rk:53.6},{n:'TECHM',rs:34.7,rk:67.9},{n:'BPCL',rs:48.3,rk:70.6},{n:'TATASTEEL',rs:68.5,rk:87.8},
+    {n:'JSWSTEEL',rs:71.9,rk:73.8},{n:'VEDL',rs:61.5,rk:93.6},{n:'DRREDDY',rs:16.4,rk:22.6},{n:'CIPLA',rs:31.9,rk:18.5},
+    {n:'DIVISLAB',rs:51.7,rk:54.8},{n:'NESTLEIND',rs:23.4,rk:2.8},{n:'BRITANNIA',rs:21.3,rk:5.9},{n:'DABUR',rs:0,rk:22.5},
+    {n:'MARICO',rs:44.7,rk:11.4},{n:'HEROMOTOCO',rs:42.6,rk:53.3},{n:'BAJAJFINSV',rs:39.8,rk:71.4},{n:'ADANIGREEN',rs:15.5,rk:96.9}
+  ];
+  const paQd = [{x:55.7,y:84.5},{x:69.7,y:90.9},{x:69.3,y:68.3},{x:62.9,y:96.4},{x:89.8,y:85.5},{x:52.3,y:57.2},{x:98.8,y:89.6},{x:92.3,y:74.7},{x:86.7,y:91.1},{x:73.6,y:100}].map((d,i)=>({...d,label:D.pa.stocks[i]}));
+  const pbQd = [{x:21.2,y:54.5},{x:19,y:83.2},{x:46.3,y:62.1},{x:8.4,y:72.1},{x:38.3,y:61.9},{x:36.1,y:89.8},{x:43.6,y:65.5},{x:49.4,y:80.2},{x:37.7,y:79.8},{x:45.7,y:71.9}].map((d,i)=>({...d,label:D.pb.stocks[i]}));
+
+  charts.quad = new Chart(document.getElementById('c-quad'),{
+    type:'scatter',
+    data:{datasets:[
+      {label:'Portfolio A (High Risk·High Return)',data:paQd,backgroundColor:PA.solid,pointRadius:8,pointHoverRadius:11},
+      {label:'Portfolio B (Low Risk·High Return)',data:pbQd,backgroundColor:PB.solid,pointRadius:8,pointHoverRadius:11},
+      {label:'Excluded',data:excluded.map(e=>({x:e.rk,y:e.rs,label:e.n})),backgroundColor:GREY.light,borderColor:GREY.solid,borderWidth:1,pointRadius:5}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{x:{title:{display:true,text:'Risk Score (percentile 0–100)'},min:0,max:105},y:{title:{display:true,text:'Return Score (percentile 0–100)'},min:0,max:105}},
+      plugins:{tooltip:{callbacks:{label:c=>(c.raw.label||'?')+` (Ret:${c.raw.y}, Risk:${c.raw.x})`}},
+        annotation:{annotations:{vmed:{type:'line',xMin:50,xMax:50,borderColor:'rgba(0,0,0,.3)',borderWidth:1.5,borderDash:[5,5]},hmed:{type:'line',yMin:50,yMax:50,borderColor:'rgba(0,0,0,.3)',borderWidth:1.5,borderDash:[5,5]}}}}}
+  });
+
+  // ── PORTFOLIO A DONUT ──
+  const palA = ['#0a1f42','#0f2d5e','#14407e','#1a549e','#2068be','#367dd0','#5595de','#74adea','#93c5f5','#b2dcff'];
+  charts.paw = new Chart(document.getElementById('c-paw'),{
+    type:'doughnut',
+    data:{labels:D.pa.stocks,datasets:[{data:D.pa.weights_chosen.map(v=>+(v*100).toFixed(0)),backgroundColor:palA}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'right',labels:{font:{size:11}}}}}
+  });
+
+  // ── PORTFOLIO A RISK/RETURN ──
+  charts.parr = new Chart(document.getElementById('c-parr'),{
+    type:'scatter',
+    data:{datasets:[{
+      label:'Stocks (size = weight)',
+      data:D.pa.stocks_data.map(s=>({x:+(s.vol*100).toFixed(1),y:+(s.cagr*100).toFixed(1),r:Math.max(6,s.weight*80),label:s.stock})),
+      backgroundColor:D.pa.stocks_data.map(()=>PA.mid),pointStyle:'circle'
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{x:{title:{display:true,text:'Annualised Volatility (%)'}},y:{title:{display:true,text:'CAGR (%)'}}},
+      plugins:{tooltip:{callbacks:{label:c=>c.raw.label+`: Vol=${c.raw.x}%, CAGR=${c.raw.y}%`}}}}
+  });
+
+  // ── PORTFOLIO A WEIGHT COMPARISON ──
+  buildPAWtChart();
+
+  // ── PORTFOLIO B DONUT ──
+  const palB = ['#052e2e','#0a4545','#0d6e6e','#108989','#14a3a3','#1dbdbd','#3ad0d0','#5de0e0','#80edec','#a2f5f5'];
+  charts.pbw = new Chart(document.getElementById('c-pbw'),{
+    type:'doughnut',
+    data:{labels:D.pb.stocks,datasets:[{data:D.pb.weights_chosen.map(v=>+(v*100).toFixed(0)),backgroundColor:palB}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'right',labels:{font:{size:11}}}}}
+  });
+
+  // ── PORTFOLIO B RISK/RETURN ──
+  charts.pbrr = new Chart(document.getElementById('c-pbrr'),{
+    type:'scatter',
+    data:{datasets:[{
+      label:'Stocks',
+      data:D.pb.stocks_data.map(s=>({x:+(s.vol*100).toFixed(1),y:+(s.cagr*100).toFixed(1),label:s.stock})),
+      backgroundColor:PB.mid,pointRadius:9,pointHoverRadius:12
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{x:{title:{display:true,text:'Annualised Volatility (%)'}},y:{title:{display:true,text:'CAGR (%)'}}},
+      plugins:{tooltip:{callbacks:{label:c=>c.raw.label+`: Vol=${c.raw.x}%, CAGR=${c.raw.y}%`}}}}
+  });
+
+  // ── PORTFOLIO B WEIGHT COMPARISON ──
+  charts.pbwc = new Chart(document.getElementById('c-pbwc'),{
+    type:'bar',
+    data:{labels:D.pb.stocks,datasets:[
+      {label:'Risk-Score Weights (Chosen)',data:D.pb.weights_chosen.map(v=>+(v*100).toFixed(1)),backgroundColor:PB.solid,borderRadius:3},
+      {label:'Max Sharpe',data:D.pb.weights_max_sharpe.map(v=>+(v*100).toFixed(1)),backgroundColor:AM,borderRadius:3},
+      {label:'Min Variance',data:D.pb.weights_min_var.map(v=>+(v*100).toFixed(1)),backgroundColor:GREY.solid,borderRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{y:{title:{display:true,text:'Weight (%)'},ticks:{callback:v=>v+'%'}}}}
+  });
+
+  // ── CALM CUMULATIVE ──
+  const cN = Math.min(CUM_A_CALM.length, CUM_B_CALM.length);
+  const cLbl = Array.from({length:cN},(_,i)=>{ const mo=['Jan','Apr','Jul','Oct'][i%4]; const yr=2015+Math.floor(i*4/cN); return mo+" '"+String(yr).slice(2); });
+  charts.cumCalm = new Chart(document.getElementById('c-cum-calm'),{
+    type:'line',
+    data:{labels:cLbl,datasets:[
+      {label:'Portfolio A',data:CUM_A_CALM.slice(0,cN),borderColor:PA.solid,backgroundColor:PA.light,borderWidth:2,pointRadius:0,fill:true,tension:.3},
+      {label:'Portfolio B',data:CUM_B_CALM.slice(0,cN),borderColor:PB.solid,backgroundColor:PB.light,borderWidth:2,pointRadius:0,fill:true,tension:.3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      scales:{y:{title:{display:true,text:'Growth (1=start)'},ticks:{callback:v=>v.toFixed(2)+'×'}},x:{ticks:{maxTicksLimit:8}}},
+      plugins:{tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(3)}×`}}}}
+  });
+
+  // ── CRISIS CUMULATIVE ──
+  const kN = Math.min(CUM_A_CRISIS.length, CUM_B_CRISIS.length);
+  const kLbl = Array.from({length:kN},(_,i)=>{ const mo=['Jan','Apr','Jul','Oct'][i%4]; const yr=2020+Math.floor(i*2/kN); return mo+" '"+String(yr).slice(2); });
+  charts.cumCrisis = new Chart(document.getElementById('c-cum-crisis'),{
+    type:'line',
+    data:{labels:kLbl,datasets:[
+      {label:'Portfolio A',data:CUM_A_CRISIS.slice(0,kN),borderColor:PA.solid,backgroundColor:PA.light,borderWidth:2,pointRadius:0,fill:true,tension:.3},
+      {label:'Portfolio B',data:CUM_B_CRISIS.slice(0,kN),borderColor:PB.solid,backgroundColor:PB.light,borderWidth:2,pointRadius:0,fill:true,tension:.3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      scales:{y:{title:{display:true,text:'Growth (1=start)'},ticks:{callback:v=>v.toFixed(2)+'×'}},x:{ticks:{maxTicksLimit:8}}},
+      plugins:{tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(3)}×`}}}}
+  });
+
+  // ── VaR CHART ──
+  const varLbls = ['Hist 95%','Hist 99%','Param 95%','Param 99%'];
+  charts.varChart = new Chart(document.getElementById('c-var'),{
+    type:'bar',
+    data:{labels:varLbls,datasets:[
+      {label:'Port A — Calm',data:[D.pa.calm.hvar95,D.pa.calm.hvar99,D.pa.calm.pvar95,D.pa.calm.pvar99].map(v=>+(v*100).toFixed(2)),backgroundColor:PA.light,borderColor:PA.solid,borderWidth:1.5,borderRadius:3},
+      {label:'Port A — Crisis',data:[D.pa.crisis.hvar95,D.pa.crisis.hvar99,D.pa.crisis.pvar95,D.pa.crisis.pvar99].map(v=>+(v*100).toFixed(2)),backgroundColor:PA.solid,borderRadius:3},
+      {label:'Port B — Calm',data:[D.pb.calm.hvar95,D.pb.calm.hvar99,D.pb.calm.pvar95,D.pb.calm.pvar99].map(v=>+(v*100).toFixed(2)),backgroundColor:PB.light,borderColor:PB.solid,borderWidth:1.5,borderRadius:3},
+      {label:'Port B — Crisis',data:[D.pb.crisis.hvar95,D.pb.crisis.hvar99,D.pb.crisis.pvar95,D.pb.crisis.pvar99].map(v=>+(v*100).toFixed(2)),backgroundColor:PB.solid,borderRadius:3}
+    ]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{title:{display:true,text:'Daily VaR (%) — more negative = worse'}},
+      scales:{x:{title:{display:true,text:'VaR (%)'},ticks:{callback:v=>v.toFixed(1)+'%'}}}}
+  });
+
+  // ── ES CHART ──
+  charts.esChart = new Chart(document.getElementById('c-es'),{
+    type:'bar',
+    data:{labels:varLbls,datasets:[
+      {label:'Port A — Calm',data:[D.pa.calm.hes95,D.pa.calm.hes99,D.pa.calm.pes95,D.pa.calm.pes99].map(v=>+(v*100).toFixed(2)),backgroundColor:PA.light,borderColor:PA.solid,borderWidth:1.5,borderRadius:3},
+      {label:'Port A — Crisis',data:[D.pa.crisis.hes95,D.pa.crisis.hes99,D.pa.crisis.pes95,D.pa.crisis.pes99].map(v=>+(v*100).toFixed(2)),backgroundColor:PA.solid,borderRadius:3},
+      {label:'Port B — Calm',data:[D.pb.calm.hes95,D.pb.calm.hes99,D.pb.calm.pes95,D.pb.calm.pes99].map(v=>+(v*100).toFixed(2)),backgroundColor:PB.light,borderColor:PB.solid,borderWidth:1.5,borderRadius:3},
+      {label:'Port B — Crisis',data:[D.pb.crisis.hes95,D.pb.crisis.hes99,D.pb.crisis.pes95,D.pb.crisis.pes99].map(v=>+(v*100).toFixed(2)),backgroundColor:PB.solid,borderRadius:3}
+    ]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{title:{display:true,text:'Expected Shortfall (%) — average loss beyond VaR'}},
+      scales:{x:{title:{display:true,text:'ES (%)'},ticks:{callback:v=>v.toFixed(1)+'%'}}}}
+  });
+
+  // ── EFFICIENT FRONTIER A ──
+  const efA = [{"x": 11.71, "y": 30.5}, {"x": 11.71, "y": 30.51}, {"x": 11.73, "y": 30.94}, {"x": 11.78, "y": 31.37}, {"x": 11.86, "y": 31.79}, {"x": 11.97, "y": 32.22}, {"x": 12.12, "y": 32.65}, {"x": 12.3, "y": 33.08}, {"x": 12.52, "y": 33.51}, {"x": 12.77, "y": 33.93}, {"x": 13.04, "y": 34.36}, {"x": 13.35, "y": 34.79}, {"x": 13.68, "y": 35.22}, {"x": 14.04, "y": 35.64}, {"x": 14.43, "y": 36.07}, {"x": 14.86, "y": 36.5}, {"x": 15.32, "y": 36.93}, {"x": 15.82, "y": 37.36}, {"x": 16.37, "y": 37.78}, {"x": 16.95, "y": 38.21}, {"x": 17.57, "y": 38.64}, {"x": 18.23, "y": 39.07}];
+  charts.efA = new Chart(document.getElementById('c-ef-a'),{
+    type:'scatter',
+    data:{datasets:[
+      {label:'Efficient Frontier',data:efA,showLine:true,borderColor:PA.mid,backgroundColor:'transparent',pointRadius:0,tension:.4,borderWidth:2},
+      {label:'Our Portfolio (CAGR-Rank)',data:[{x:14.09,y:34.60}],backgroundColor:'#dc2626',pointRadius:12,pointStyle:'triangle',borderColor:'#fff',borderWidth:2},
+      {label:'Max Sharpe',data:[{x:12.28,y:33.02}],backgroundColor:AM,pointRadius:12,pointStyle:'star',borderColor:'#fff',borderWidth:2},
+      {label:'Min Variance',data:[{x:11.71,y:30.50}],backgroundColor:GREY.solid,pointRadius:8,borderColor:'#fff',borderWidth:2}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{x:{title:{display:true,text:'Ann. Risk (%)'},min:9,max:22},y:{title:{display:true,text:'Ann. Return (%)'},min:28,max:42}},
+      plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>`${c.dataset.label}: Risk=${c.raw.x}%, Ret=${c.raw.y}%`}}}}
+  });
+
+  // ── EFFICIENT FRONTIER B ──
+  const efB = [{"x": 10.11, "y": 19.97}, {"x": 10.11, "y": 19.98}, {"x": 10.12, "y": 20.37}, {"x": 10.16, "y": 20.75}, {"x": 10.23, "y": 21.14}, {"x": 10.32, "y": 21.53}, {"x": 10.44, "y": 21.91}, {"x": 10.58, "y": 22.3}, {"x": 10.75, "y": 22.69}, {"x": 10.94, "y": 23.07}, {"x": 11.15, "y": 23.46}, {"x": 11.38, "y": 23.85}, {"x": 11.63, "y": 24.23}, {"x": 11.91, "y": 24.62}, {"x": 12.22, "y": 25.01}, {"x": 12.57, "y": 25.39}, {"x": 12.95, "y": 25.78}, {"x": 13.35, "y": 26.17}, {"x": 13.78, "y": 26.55}, {"x": 14.26, "y": 26.94}, {"x": 14.8, "y": 27.33}, {"x": 15.38, "y": 27.71}, {"x": 16.01, "y": 28.1}, {"x": 16.69, "y": 28.49}, {"x": 17.44, "y": 28.87}];
+  charts.efB = new Chart(document.getElementById('c-ef-b'),{
+    type:'scatter',
+    data:{datasets:[
+      {label:'Efficient Frontier',data:efB,showLine:true,borderColor:PB.mid,backgroundColor:'transparent',pointRadius:0,tension:.4,borderWidth:2},
+      {label:'Chosen Weights (Risk-Score)',data:[{x:12.97,y:21.46}],backgroundColor:'#dc2626',pointRadius:12,pointStyle:'triangle',borderColor:'#fff',borderWidth:2},
+      {label:'Max Sharpe',data:[{x:11.47,y:23.99}],backgroundColor:AM,pointRadius:12,pointStyle:'star',borderColor:'#fff',borderWidth:2},
+      {label:'Min Variance',data:[{x:10.11,y:19.97}],backgroundColor:GREY.solid,pointRadius:8,borderColor:'#fff',borderWidth:2}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{x:{title:{display:true,text:'Ann. Risk (%)'},min:9,max:20},y:{title:{display:true,text:'Ann. Return (%)'},min:18,max:32}},
+      plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>`${c.dataset.label}: Risk=${c.raw.x}%, Ret=${c.raw.y}%`}}}}
+  });
+
+  // ── CORRELATION AVG BARS ──
+  const avgCorr = (corr,n) => corr.map((row,i)=>{
+    const vals = row.filter((_,j)=>j!==i);
+    return +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(3);
+  });
+  const acA = avgCorr(D.pa.corr,10);
+  const acB = avgCorr(D.pb.corr,10);
+
+  charts.corrA = new Chart(document.getElementById('c-corr-a'),{
+    type:'bar',
+    data:{labels:D.pa.stocks,datasets:[{label:'Avg Pairwise Correlation',data:acA,backgroundColor:acA.map(v=>v>0.1?PA.solid:v>0.05?PA.mid:PA.light),borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{y:{title:{display:true,text:'Avg ρ'},min:-0.05,max:0.15}},plugins:{legend:{display:false}}}
+  });
+
+  charts.corrB = new Chart(document.getElementById('c-corr-b'),{
+    type:'bar',
+    data:{labels:D.pb.stocks,datasets:[{label:'Avg Pairwise Correlation',data:acB,backgroundColor:acB.map(v=>v>0.1?PB.solid:v>0.05?PB.mid:PB.light),borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{y:{title:{display:true,text:'Avg ρ'},min:-0.05,max:0.2}},plugins:{legend:{display:false}}}
+  });
+
+  // ── FINAL SCATTER ──
+  charts.finalScatter = new Chart(document.getElementById('c-scatter-final'),{
+    type:'scatter',
+    data:{datasets:[
+      {label:'Portfolio A — Full Period',data:[{x:14.09,y:34.60}],backgroundColor:PA.solid,pointRadius:14,pointHoverRadius:16},
+      {label:'Portfolio B — Full Period',data:[{x:12.97,y:21.46}],backgroundColor:PB.solid,pointRadius:14,pointHoverRadius:16},
+      {label:'Port A — Calm',data:[{x:15.74,y:13.46}],backgroundColor:PA.light,borderColor:PA.solid,borderWidth:2,pointRadius:10},
+      {label:'Port A — Crisis',data:[{x:19.84,y:108.31}],backgroundColor:PA.mid,pointRadius:10},
+      {label:'Port B — Calm',data:[{x:14.59,y:3.51}],backgroundColor:PB.light,borderColor:PB.solid,borderWidth:2,pointRadius:10},
+      {label:'Port B — Crisis',data:[{x:18.79,y:38.58}],backgroundColor:PB.mid,pointRadius:10}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{x:{title:{display:true,text:'Annualised Volatility (%)'},min:8,max:40},y:{title:{display:true,text:'Annualised Return (%)'},min:-5,max:70}},
+      plugins:{tooltip:{callbacks:{label:c=>`${c.dataset.label}: σ=${c.raw.x}%, Ret=${c.raw.y}%`}}}}
+  });
+
+  // Build heatmaps
+  buildHeatmap('hm-a', D.pa.corr, D.pa.stocks);
+  buildHeatmap('hm-b', D.pb.corr, D.pb.stocks);
+}
+
+function buildPAWtChart(){
+  if(charts.pawc) charts.pawc.destroy();
+  const ds = [];
+  if(paWtMode===0||paWtMode===2){
+    ds.push({label:'Our Weights (CAGR-Rank)',data:D.pa.weights_chosen.map(v=>+(v*100).toFixed(1)),backgroundColor:PA.solid,borderRadius:3});
+    ds.push({label:'Max Sharpe',data:D.pa.weights_max_sharpe.map(v=>+(v*100).toFixed(1)),backgroundColor:AM,borderRadius:3});
+  }
+  if(paWtMode===1||paWtMode===2){
+    if(paWtMode===1) ds.push({label:'Our Weights (CAGR-Rank)',data:D.pa.weights_chosen.map(v=>+(v*100).toFixed(1)),backgroundColor:PA.solid,borderRadius:3});
+    ds.push({label:'Min Variance',data:D.pa.weights_min_var.map(v=>+(v*100).toFixed(1)),backgroundColor:GREY.solid,borderRadius:3});
+  }
+  charts.pawc = new Chart(document.getElementById('c-pawc'),{
+    type:'bar',data:{labels:D.pa.stocks,datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,scales:{y:{title:{display:true,text:'Weight (%)'},ticks:{callback:v=>v+'%'}}}}
+  });
+}
+
+function tglPA(mode, btn){
+  paWtMode = mode;
+  document.querySelectorAll('#tgl-pa button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  buildPAWtChart();
+}
+
+// ─────────────────────────────────────────────────────────────
+//  HEATMAP
+// ─────────────────────────────────────────────────────────────
+function corrColor(v){
+  // Map -1 to 1 to a RdBu scale
+  const r = v < 0 ? 220 : Math.round(255 * (1 - v));
+  const g = Math.round(255 * (1 - Math.abs(v)));
+  const b = v > 0 ? 220 : Math.round(255 * (1 + v));
+  return `rgb(${r},${g},${b})`;
+}
+function corrTextColor(v){ return Math.abs(v)>0.5?'#fff':'#374151'; }
+
+function buildHeatmap(containerId, corr, labels){
+  const container = document.getElementById(containerId);
+  const n = labels.length;
+  const size = 34; // Fixed size because offsetWidth is 0 when tab is hidden
+  let html = `<div style="display:flex;align-items:flex-start;gap:2px">`;
+  html += `<div style="display:grid;grid-template-rows:repeat(${n},${size}px);gap:2px;margin-top:${size+4}px">`;
+  labels.forEach(l=>{ html+=`<div style="height:${size}px;display:flex;align-items:center;justify-content:flex-end;padding-right:4px;font-size:.62rem;color:var(--muted);white-space:nowrap">${l}</div>`; });
+  html += `</div>`;
+  html += `<div>`;
+  html += `<div style="display:grid;grid-template-columns:repeat(${n},${size}px);gap:2px;margin-bottom:2px">`;
+  // Fixed transform-origin and alignment for columns
+  labels.forEach(l=>{ html+=`<div style="text-align:left;font-size:.6rem;color:var(--muted);width:${size}px;white-space:nowrap;overflow:visible;transform:rotate(-45deg);transform-origin:bottom left;height:${size}px;display:flex;align-items:flex-end;padding-left:4px">${l}</div>`; });
+  html += `</div>`;
+  html += `<div style="display:grid;grid-template-columns:repeat(${n},${size}px);gap:2px">`;
+  corr.forEach((row,i)=>{
+    row.forEach((v,j)=>{
+      const bg = i===j ? '#0f2d5e' : corrColor(v);
+      const tc = i===j ? '#fff' : corrTextColor(v);
+      const val = i===j ? '1' : v.toFixed(2);
+      html += `<div title="${labels[i]} × ${labels[j]}: ${v.toFixed(3)}" style="width:${size}px;height:${size}px;background:${bg};display:flex;align-items:center;justify-content:center;border-radius:2px;font-size:.58rem;font-weight:600;color:${tc};cursor:pointer">${val}</div>`;
+    });
+  });
+  html += `</div></div></div>`;
+  // Legend
+  html += `<div style="margin-top:1.5rem;display:flex;align-items:center;gap:.4rem;font-size:.72rem;color:var(--muted)">`;
+  html += `<span>-1.0 (Inverse)</span>`;
+  [-1, -0.6, -0.3, 0, 0.3, 0.6, 1].forEach(c=>{
+    html+=`<div style="width:24px;height:12px;background:${corrColor(c)};border-radius:2px"></div>`;
+  });
+  html += `<span>+1.0 (Direct)</span></div>`;
+  container.innerHTML = html;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────────────────────
+window.onload = () => {
+  buildTables();
+  updateAll();
+  initCharts();
+};
+
+// ── Hero page controller ──
+function beginJourney(){
+  var hero = document.getElementById('hero');
+  var shell = document.getElementById('shell');
+  hero.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
+  hero.style.opacity = '0';
+  hero.style.transform = 'scale(1.04)';
+  hero.style.pointerEvents = 'none';
+  shell.style.opacity = '1';
+  setTimeout(function(){ hero.style.display = 'none'; }, 750);
+}
+</script>
+
+</div><!-- #shell -->
+</body>
+</html>
